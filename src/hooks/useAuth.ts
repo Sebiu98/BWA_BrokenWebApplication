@@ -15,12 +15,10 @@ export type AuthCredentials = {
 };
 
 export function useAuth() {
-  const [session, setSession] = useState<AuthSession | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [session, setSession] = useState<AuthSession | null>(() => readSession());
+  const [isReady, setIsReady] = useState(true);
 
   useEffect(() => {
-    setSession(readSession());
-    setIsReady(true);
   }, []);
 
   const login = useCallback(async ({ email, password }: AuthCredentials) => {
@@ -37,7 +35,7 @@ export function useAuth() {
 
   const register = useCallback(async ({ email, password }: AuthCredentials) => {
     // TODO: inviare registrazione al backend e salvare su Postgres.
-    // TODO: hash password sul backend (bcrypt/argon2) prima di salvare.
+    // TODO: hash password sul backend (bcrypt) prima di salvare.
     // TODO: assegnare ruolo "admin" in base agli account configurati dal backend/JWT.
     void password;
     const nextSession: AuthSession = {
