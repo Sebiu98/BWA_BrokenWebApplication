@@ -5,11 +5,15 @@ import MaxWidthWrapper from "../../components/MaxWidthWrapper";
 import { getProductById, products } from "../../../data/products";
 
 type ProductPageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
-const ProductPage = ({ params }: ProductPageProps) => {
-  const product = getProductById(params.id);
+export const generateStaticParams = () =>
+  products.map((product) => ({ id: product.id }));
+
+const ProductPage = async ({ params }: ProductPageProps) => {
+  const { id } = await params;
+  const product = getProductById(String(id));
 
   if (!product) {
     return notFound();
@@ -21,7 +25,7 @@ const ProductPage = ({ params }: ProductPageProps) => {
 
   return (
     <main className="bg-slate-50">
-      <MaxWidthWrapper className="px-6 py-16 lg:px-0">
+      <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-56 relative overflow-hidden">
         <Link href="/products" className="text-sm font-semibold text-slate-600">
           Back to catalog
         </Link>

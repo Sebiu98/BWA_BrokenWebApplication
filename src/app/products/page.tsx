@@ -4,10 +4,10 @@ import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import { products } from "../../data/products";
 
 type ProductsPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     search?: string;
     category?: string;
-  };
+  }>;
 };
 
 const buildQuery = (search: string, category: string) => {
@@ -22,9 +22,10 @@ const buildQuery = (search: string, category: string) => {
   return query ? `/products?${query}` : "/products";
 };
 
-const ProductsPage = ({ searchParams }: ProductsPageProps) => {
-  const search = (searchParams?.search ?? "").trim();
-  const category = (searchParams?.category ?? "").trim();
+const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
+  const resolvedParams = (await searchParams) ?? {};
+  const search = (resolvedParams.search ?? "").trim();
+  const category = (resolvedParams.category ?? "").trim();
   const normalizedSearch = search.toLowerCase();
 
   const categories = Array.from(
