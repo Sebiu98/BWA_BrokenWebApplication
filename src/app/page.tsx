@@ -1,8 +1,19 @@
 import { Check, Star } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import MaxWidthWrapper from "./components/MaxWidthWrapper";
+import { getProductById } from "../data/products";
 
 export default function Home() {
+  //TODO:in futuro scegliere un prodotto casuale per la hero.
+  const featuredProductId = "1";
+  const featuredProduct = getProductById(featuredProductId);
+  const featuredName = featuredProduct ? featuredProduct.name : "Featured game";
+  const featuredPrice = featuredProduct ? featuredProduct.price : 0;
+  const featuredOriginalPrice = featuredProduct
+    ? featuredProduct.originalPrice
+    : undefined;
+
   //Hero page pubblica.
   return (
     <div className="bg-slate-50">
@@ -143,21 +154,25 @@ export default function Home() {
                   </span>
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                  Elden Ring - Deluxe
+                  {featuredName}
                 </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Global key · Instant delivery · Verified
-                </p>
                 <div className="mt-5 flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-slate-400 line-through">
-                      €59.99
+                    {featuredOriginalPrice ? (
+                      <p className="text-sm text-slate-400 line-through">
+                        ${featuredOriginalPrice.toFixed(2)}
+                      </p>
+                    ) : null}
+                    <p className="text-2xl font-bold text-slate-900">
+                      ${featuredPrice.toFixed(2)}
                     </p>
-                    <p className="text-2xl font-bold text-slate-900">€38.99</p>
                   </div>
-                  <button className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
+                  <Link
+                    href={`/products/${featuredProductId}`}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                  >
                     Buy now
-                  </button>
+                  </Link>
                 </div>
                 <div className="mt-6 grid grid-cols-3 gap-3 text-center text-xs text-slate-600">
                   <div className="rounded-lg bg-slate-50 px-2 py-2">

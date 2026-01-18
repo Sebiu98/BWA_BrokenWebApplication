@@ -26,7 +26,7 @@ const Navbar = () => {
                 height={80}
                 className="h-16 w-auto"
               />
-              <span className="flex flex-col leading-none text-slate-900">
+              <span className="hidden flex-col leading-none text-slate-900 lg:flex">
                 <span className="text-xs font-semibold sm:text-sm">
                   Broken Web
                 </span>
@@ -43,6 +43,12 @@ const Navbar = () => {
                 <span className="hidden text-sm text-slate-600 sm:block">
                   Hi, {user.name}
                 </span>
+                <Link
+                  href="/profile"
+                  className={buttonVariants({ size: "sm", variant: "ghost" })}
+                >
+                  Profile
+                </Link>
                 <button
                   type="button"
                   onClick={logout}
