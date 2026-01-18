@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type AuthSession,
   type UserRole,
@@ -15,13 +15,16 @@ export type AuthCredentials = {
 };
 
 export function useAuth() {
-  const [session, setSession] = useState<AuthSession | null>(() => readSession());
-  const [isReady, setIsReady] = useState(true);
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    const storedSession = readSession();
+    setSession(storedSession);
+    setIsReady(true);
   }, []);
 
-  const login = useCallback(async ({ email, password }: AuthCredentials) => {
+  const login = async ({ email, password }: AuthCredentials) => {
     // TODO: chiamare endpoint /auth/login, validare credenziali e ricevere JWT.
     // TODO: gestire errori dal backend (utente non valido, password errata).
     void password;
@@ -31,9 +34,9 @@ export function useAuth() {
     };
     writeSession(nextSession);
     setSession(nextSession);
-  }, []);
+  };
 
-  const register = useCallback(async ({ email, password }: AuthCredentials) => {
+  const register = async ({ email, password }: AuthCredentials) => {
     // TODO: inviare registrazione al backend e salvare su Postgres.
     // TODO: hash password sul backend (bcrypt) prima di salvare.
     // TODO: assegnare ruolo "admin" in base agli account configurati dal backend/JWT.
@@ -44,12 +47,12 @@ export function useAuth() {
     };
     writeSession(nextSession);
     setSession(nextSession);
-  }, []);
+  };
 
-  const logout = useCallback(() => {
+  const logout = () => {
     clearSession();
     setSession(null);
-  }, []);
+  };
 
   const user = session?.user ?? null;
   const isAuthenticated = Boolean(session);

@@ -8,31 +8,33 @@ import { useAuth } from "../../hooks/useAuth";
 
 type AuthMode = "login" | "register";
 
-const copy = {
-  login: {
-    title: "Welcome back",
-    description: "Sign in to access your library and purchases.",
-    submit: "Sign in",
-    switchLabel: "Need an account?",
-    switchText: "Sign up",
-    switchHref: "/register",
-  },
-  register: {
-    title: "Create your account",
-    description: "Join BWA to unlock instant delivery and verified keys.",
-    submit: "Create account",
-    switchLabel: "Already have an account?",
-    switchText: "Log in",
-    switchHref: "/login",
-  },
-};
-
 const AuthForm = ({ mode }: { mode: AuthMode }) => {
   const router = useRouter();
   const { login, register } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const content = copy[mode];
+  let title = "";
+  let description = "";
+  let submitLabel = "";
+  let switchLabel = "";
+  let switchText = "";
+  let switchHref = "";
+
+  if (mode === "login") {
+    title = "Welcome back";
+    description = "Sign in to access your library and purchases.";
+    submitLabel = "Sign in";
+    switchLabel = "Need an account?";
+    switchText = "Sign up";
+    switchHref = "/register";
+  } else {
+    title = "Create your account";
+    description = "Join BWA to unlock instant delivery and verified keys.";
+    submitLabel = "Create account";
+    switchLabel = "Already have an account?";
+    switchText = "Log in";
+    switchHref = "/login";
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,8 +50,8 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
 
   return (
     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-      <h1 className="text-2xl font-semibold text-slate-900">{content.title}</h1>
-      <p className="mt-2 text-sm text-slate-600">{content.description}</p>
+      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+      <p className="mt-2 text-sm text-slate-600">{description}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <label className="block text-sm font-medium text-slate-700">
@@ -77,14 +79,14 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
         </label>
 
         <Button type="submit" className="w-full">
-          {content.submit}
+          {submitLabel}
         </Button>
       </form>
 
       <p className="mt-6 text-sm text-slate-600">
-        {content.switchLabel}{" "}
-        <Link href={content.switchHref} className="font-semibold text-slate-900">
-          {content.switchText}
+        {switchLabel}{" "}
+        <Link href={switchHref} className="font-semibold text-slate-900">
+          {switchText}
         </Link>
       </p>
     </div>

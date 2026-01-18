@@ -8,9 +8,6 @@ type ProductPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export const generateStaticParams = () =>
-  products.map((product) => ({ id: product.id }));
-
 const ProductPage = async ({ params }: ProductPageProps) => {
   const { id } = await params;
   const product = getProductById(String(id));
@@ -19,9 +16,45 @@ const ProductPage = async ({ params }: ProductPageProps) => {
     return notFound();
   }
 
-  const relatedProducts = products
-    .filter((item) => item.id !== product.id)
-    .slice(0, 3);
+  const relatedProducts = [];
+  for (let i = 0; i < products.length; i += 1) {
+    const item = products[i];
+    if (item.id === product.id) {
+      continue;
+    }
+    relatedProducts.push(item);
+    if (relatedProducts.length === 3) {
+      break;
+    }
+  }
+
+  const relatedCards = [];
+  for (let i = 0; i < relatedProducts.length; i += 1) {
+    const item = relatedProducts[i];
+    relatedCards.push(
+      <Link
+        key={item.id}
+        href={`/products/${item.id}`}
+        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div className="flex h-28 items-center justify-center rounded-xl bg-slate-50">
+          <Image
+            src={item.image}
+            alt={item.name}
+            width={120}
+            height={120}
+            className="h-20 w-20 object-contain"
+          />
+        </div>
+        <h3 className="mt-4 text-base font-semibold text-slate-900">
+          {item.name}
+        </h3>
+        <p className="mt-1 text-sm text-slate-600">
+          ${item.price.toFixed(2)}
+        </p>
+      </Link>
+    );
+  }
 
   return (
     <main className="bg-slate-50">
@@ -103,29 +136,7 @@ const ProductPage = async ({ params }: ProductPageProps) => {
             Related titles
           </h2>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
-            {relatedProducts.map((item) => (
-              <Link
-                key={item.id}
-                href={`/products/${item.id}`}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex h-28 items-center justify-center rounded-xl bg-slate-50">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={120}
-                    height={120}
-                    className="h-20 w-20 object-contain"
-                  />
-                </div>
-                <h3 className="mt-4 text-base font-semibold text-slate-900">
-                  {item.name}
-                </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  ${item.price.toFixed(2)}
-                </p>
-              </Link>
-            ))}
+            {relatedCards}
           </div>
         </section>
       </MaxWidthWrapper>

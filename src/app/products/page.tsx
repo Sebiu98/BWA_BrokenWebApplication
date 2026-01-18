@@ -10,38 +10,156 @@ type ProductsPageProps = {
   }>;
 };
 
-const buildQuery = (search: string, category: string) => {
-  const params = new URLSearchParams();
-  if (search) {
-    params.set("search", search);
+const makeLink = (searchValue: string, categoryValue: string) => {
+  let query = "";
+  if (searchValue) {
+    query = "search=" + encodeURIComponent(searchValue);
   }
-  if (category) {
-    params.set("category", category);
+  if (categoryValue) {
+    if (query) {
+      query = query + "&";
+    }
+    query = query + "category=" + encodeURIComponent(categoryValue);
   }
-  const query = params.toString();
-  return query ? `/products?${query}` : "/products";
+  if (query) {
+    return "/products?" + query;
+  }
+  return "/products";
 };
 
 const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   const resolvedParams = (await searchParams) ?? {};
-  const search = (resolvedParams.search ?? "").trim();
-  const category = (resolvedParams.category ?? "").trim();
-  const normalizedSearch = search.toLowerCase();
+  const searchText = resolvedParams.search ? resolvedParams.search.trim() : "";
+  const categoryText = resolvedParams.category
+    ? resolvedParams.category.trim()
+    : "";
 
-  const categories = Array.from(
-    new Set(products.map((product) => product.category))
-  ).sort();
+  const searchLower = searchText ? searchText.toLowerCase() : "";
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = normalizedSearch
-      ? product.name.toLowerCase().includes(normalizedSearch) ||
-        product.description.toLowerCase().includes(normalizedSearch)
-      : true;
-    const matchesCategory = category
-      ? product.category.toLowerCase() === category.toLowerCase()
-      : true;
-    return matchesSearch && matchesCategory;
-  });
+  const categories: string[] = [];
+  for (let i = 0; i < products.length; i += 1) {
+    const categoryName = products[i].category;
+    if (!categories.includes(categoryName)) {
+      categories.push(categoryName);
+    }
+  }
+  categories.sort();
+
+  const filteredProducts = [];
+  for (let i = 0; i < products.length; i += 1) {
+    const product = products[i];
+    let matchesSearch = true;
+    let matchesCategory = true;
+
+    if (searchLower) {
+      const name = product.name.toLowerCase();
+      const description = product.description.toLowerCase();
+      if (!name.includes(searchLower) && !description.includes(searchLower)) {
+        matchesSearch = false;
+      }
+    }
+
+    if (categoryText) {
+      const productCategory = product.category.toLowerCase();
+      if (productCategory !== categoryText.toLowerCase()) {
+        matchesCategory = false;
+      }
+    }
+
+    if (matchesSearch && matchesCategory) {
+      filteredProducts.push(product);
+    }
+  }
+
+  const categoryLinks = [];
+  const allClassName = categoryText
+    ? "rounded-full border border-slate-200 px-3 py-1 text-slate-600 transition hover:border-slate-300"
+    : "rounded-full border border-slate-900 px-3 py-1 text-slate-900 transition";
+
+  categoryLinks.push(
+    <Link key="all" href={makeLink(searchText, "")} className={allClassName}>
+      All
+    </Link>
+  );
+
+  for (let i = 0; i < categories.length; i += 1) {
+    const categoryName = categories[i];
+    const isActive =
+      categoryName.toLowerCase() === categoryText.toLowerCase();
+    const linkClassName = isActive
+      ? "rounded-full border border-slate-900 px-3 py-1 text-slate-900 transition"
+      : "rounded-full border border-slate-200 px-3 py-1 text-slate-600 transition hover:border-slate-300";
+
+    categoryLinks.push(
+      <Link
+        key={categoryName}
+        href={makeLink(searchText, categoryName)}
+        className={linkClassName}
+      >
+        {categoryName}
+      </Link>
+    );
+  }
+
+  const productCards = [];
+  for (let i = 0; i < filteredProducts.length; i += 1) {
+    const product = filteredProducts[i];
+    productCards.push(
+      <div
+        key={product.id}
+        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <span className="uppercase tracking-[0.2em]">
+            {product.category}
+          </span>
+          <span>{product.platform}</span>
+        </div>
+        <div className="mt-4 flex h-36 items-center justify-center rounded-xl bg-slate-50">
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={160}
+            height={160}
+            className="h-28 w-28 object-contain"
+          />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold text-slate-900">
+          {product.name}
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">{product.description}</p>
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            {product.originalPrice ? (
+              <p className="text-xs text-slate-400 line-through">
+                ${product.originalPrice.toFixed(2)}
+              </p>
+            ) : null}
+            <p className="text-lg font-semibold text-slate-900">
+              ${product.price.toFixed(2)}
+            </p>
+          </div>
+          <div className="text-sm text-slate-600">
+            {product.rating.toFixed(1)} / 5
+          </div>
+        </div>
+        <div className="mt-6 flex gap-2">
+          <Link
+            href={`/products/${product.id}`}
+            className="flex-1 rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            View details
+          </Link>
+          <button
+            type="button"
+            className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Add to cart
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="bg-slate-50">
@@ -67,7 +185,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
                 <input
                   type="text"
                   name="search"
-                  defaultValue={search}
+                  defaultValue={searchText}
                   placeholder="Search by game or genre"
                   className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 />
@@ -84,15 +202,17 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
               <div className="mt-2 flex gap-2">
                 <select
                   name="category"
-                  defaultValue={category}
+                  defaultValue={categoryText}
                   className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 >
                   <option value="">All categories</option>
-                  {categories.map((categoryOption) => (
-                    <option key={categoryOption} value={categoryOption}>
-                      {categoryOption}
-                    </option>
-                  ))}
+                  {categories.map((categoryOption) => {
+                    return (
+                      <option key={categoryOption} value={categoryOption}>
+                        {categoryOption}
+                      </option>
+                    );
+                  })}
                 </select>
                 <button
                   type="submit"
@@ -105,115 +225,38 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
           </form>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-2 text-sm">
-          <Link
-            href={buildQuery(search, "")}
-            className={`rounded-full border px-3 py-1 transition ${
-              category
-                ? "border-slate-200 text-slate-600 hover:border-slate-300"
-                : "border-slate-900 text-slate-900"
-            }`}
-          >
-            All
-          </Link>
-          {categories.map((categoryOption) => (
-            <Link
-              key={categoryOption}
-              href={buildQuery(search, categoryOption)}
-              className={`rounded-full border px-3 py-1 transition ${
-                categoryOption.toLowerCase() === category.toLowerCase()
-                  ? "border-slate-900 text-slate-900"
-                  : "border-slate-200 text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              {categoryOption}
-            </Link>
-          ))}
-        </div>
+        <div className="mt-8 flex flex-wrap gap-2 text-sm">{categoryLinks}</div>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="uppercase tracking-[0.2em]">
-                  {product.category}
-                </span>
-                <span>{product.platform}</span>
-              </div>
-              <div className="mt-4 flex h-36 items-center justify-center rounded-xl bg-slate-50">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={160}
-                  height={160}
-                  className="h-28 w-28 object-contain"
-                />
-              </div>
-              <h2 className="mt-4 text-lg font-semibold text-slate-900">
-                {product.name}
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                {product.description}
-              </p>
-              <div className="mt-4 flex items-center justify-between">
-                <div>
-                  {product.originalPrice ? (
-                    <p className="text-xs text-slate-400 line-through">
-                      ${product.originalPrice.toFixed(2)}
-                    </p>
-                  ) : null}
-                  <p className="text-lg font-semibold text-slate-900">
-                    ${product.price.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-sm text-slate-600">
-                  {product.rating.toFixed(1)} / 5
-                </div>
-              </div>
-              <div className="mt-6 flex gap-2">
-                <Link
-                  href={`/products/${product.id}`}
-                  className="flex-1 rounded-full bg-slate-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  View details
-                </Link>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Add to cart
-                </button>
-              </div>
-            </div>
-          ))}
+          {productCards}
         </div>
 
         <section id="how" className="mt-16 rounded-2xl bg-white p-8 shadow-sm">
           <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: "Choose your game",
-                body: "Browse verified keys and lock in the best price.",
-              },
-              {
-                title: "Secure checkout",
-                body: "Complete payment with instant confirmation.",
-              },
-              {
-                title: "Play instantly",
-                body: "Receive your key immediately and start playing.",
-              },
-            ].map((step) => (
-              <div key={step.title} className="space-y-2">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {step.title}
-                </h3>
-                <p className="text-sm text-slate-600">{step.body}</p>
-              </div>
-            ))}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Choose your game
+              </h3>
+              <p className="text-sm text-slate-600">
+                Browse verified keys and lock in the best price.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Secure checkout
+              </h3>
+              <p className="text-sm text-slate-600">
+                Complete payment with instant confirmation.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Play instantly
+              </h3>
+              <p className="text-sm text-slate-600">
+                Receive your key immediately and start playing.
+              </p>
+            </div>
           </div>
         </section>
       </MaxWidthWrapper>
