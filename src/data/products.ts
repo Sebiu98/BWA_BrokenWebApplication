@@ -1,3 +1,4 @@
+//Tipo base prodotto.
 export type Product = {
   id: string;
   name: string;
@@ -10,6 +11,7 @@ export type Product = {
   image: string;
 };
 
+//Lista prodotti mock per il catalogo.
 export const products: Product[] = [
   {
     id: "1",
@@ -105,5 +107,7 @@ export const products: Product[] = [
   },
 ];
 
-export const getProductById = (id: string) =>
-  products.find((product) => product.id === id);
+//Trova un prodotto per id.
+export const getProductById = (id: string) => {
+  return products.find((product) => product.id === id);
+};

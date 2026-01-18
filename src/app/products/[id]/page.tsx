@@ -2,20 +2,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import MaxWidthWrapper from "../../components/MaxWidthWrapper";
+import ProductComments from "../../components/ProductComments";
 import { getProductById, products } from "../../../data/products";
 
+//Pagina dettaglio prodotto.
 type ProductPageProps = {
   params: Promise<{ id: string }>;
 };
 
 const ProductPage = async ({ params }: ProductPageProps) => {
+  //Legge l'id dalla route.
   const { id } = await params;
   const product = getProductById(String(id));
 
+  //Se non esiste, mostra 404.
   if (!product) {
     return notFound();
   }
 
+  //Prodotti correlati semplici.
   const relatedProducts = [];
   for (let i = 0; i < products.length; i += 1) {
     const item = products[i];
@@ -28,6 +33,7 @@ const ProductPage = async ({ params }: ProductPageProps) => {
     }
   }
 
+  //Card prodotti correlati.
   const relatedCards = [];
   for (let i = 0; i < relatedProducts.length; i += 1) {
     const item = relatedProducts[i];
@@ -56,6 +62,7 @@ const ProductPage = async ({ params }: ProductPageProps) => {
     );
   }
 
+  //Layout principale.
   return (
     <main className="bg-slate-50">
       <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-56 relative overflow-hidden">
@@ -130,6 +137,8 @@ const ProductPage = async ({ params }: ProductPageProps) => {
             </div>
           </div>
         </div>
+
+        <ProductComments productId={String(id)} />
 
         <section className="mt-14">
           <h2 className="text-xl font-semibold text-slate-900">

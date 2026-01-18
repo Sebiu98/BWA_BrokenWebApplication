@@ -3,6 +3,7 @@ import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import { products } from "../../data/products";
 
+//Pagina catalogo con dati mock.
 type ProductsPageProps = {
   searchParams?: Promise<{
     search?: string;
@@ -10,6 +11,7 @@ type ProductsPageProps = {
   }>;
 };
 
+//Crea il link con query string semplice.
 const makeLink = (searchValue: string, categoryValue: string) => {
   let query = "";
   if (searchValue) {
@@ -28,6 +30,7 @@ const makeLink = (searchValue: string, categoryValue: string) => {
 };
 
 const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
+  //Legge search e category dalla query.
   const resolvedParams = (await searchParams) ?? {};
   const searchText = resolvedParams.search ? resolvedParams.search.trim() : "";
   const categoryText = resolvedParams.category
@@ -36,6 +39,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
 
   const searchLower = searchText ? searchText.toLowerCase() : "";
 
+  //Lista categorie unica.
   const categories: string[] = [];
   for (let i = 0; i < products.length; i += 1) {
     const categoryName = products[i].category;
@@ -45,6 +49,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   }
   categories.sort();
 
+  //Filtra i prodotti in base a search e categoria.
   const filteredProducts = [];
   for (let i = 0; i < products.length; i += 1) {
     const product = products[i];
@@ -71,6 +76,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
     }
   }
 
+  //Link rapidi per le categorie.
   const categoryLinks = [];
   const allClassName = categoryText
     ? "rounded-full border border-slate-200 px-3 py-1 text-slate-600 transition hover:border-slate-300"
@@ -101,6 +107,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
     );
   }
 
+  //Card dei prodotti.
   const productCards = [];
   for (let i = 0; i < filteredProducts.length; i += 1) {
     const product = filteredProducts[i];
@@ -161,6 +168,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
     );
   }
 
+  //Layout principale della pagina.
   return (
     <main className="bg-slate-50">
       <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-56 relative overflow-hidden">

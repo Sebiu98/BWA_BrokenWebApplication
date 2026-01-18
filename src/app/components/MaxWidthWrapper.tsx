@@ -1,5 +1,6 @@
 import { cn } from "../../lib/utils";
 
+//Wrapper per limitare la larghezza e dare padding.
 const MaxWidthWrapper = ({
   className,
   children,

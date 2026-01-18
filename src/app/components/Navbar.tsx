@@ -7,28 +7,42 @@ import { ShoppingCart } from "lucide-react";
 import { buttonVariants } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
 
+//Navbar principale con stato auth demo.
 const Navbar = () => {
+  //Dati utente dalla sessione.
   const { user, isAdmin, logout } = useAuth();
 
+  //Struttura navbar con logo, link e azioni.
   return (
-    <nav className="sticky z-100 h-14 inset-x-0 top-0 w-full border-b border-gray-200 bg-white/75 backdrop-blur-lg transition-all">
+    <nav className="sticky z-100 h-16 inset-x-0 top-0 w-full border-b border-gray-200 bg-white/75 backdrop-blur-lg transition-all">
       <MaxWidthWrapper>
-        <div className="flex h-14 items-center justify-between border-b border-zinc-200">
+        <div className="flex h-16 items-center justify-between border-b border-zinc-200">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center z-40">
               <Image
                 src="/BWA_logo.png"
                 alt="BWA logo"
-                width={40}
-                height={40}
-                className="h-9 w-9"
+                width={160}
+                height={80}
+                className="h-16 w-auto"
               />
+              <span className="flex flex-col leading-none text-slate-900">
+                <span className="text-xs font-semibold sm:text-sm">
+                  Broken Web
+                </span>
+                <span className="text-xs font-semibold sm:text-sm">
+                  Application
+                </span>
+              </span>
             </Link>
           </div>
 
           <div className="h-full flex items-center space-x-4">
             {user ? (
               <>
+                <span className="hidden text-sm text-slate-600 sm:block">
+                  Hi, {user.name}
+                </span>
                 <button
                   type="button"
                   onClick={logout}

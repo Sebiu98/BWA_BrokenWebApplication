@@ -6,13 +6,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
 
+//Modalita del form.
 type AuthMode = "login" | "register";
 
 const AuthForm = ({ mode }: { mode: AuthMode }) => {
+  //Router per i redirect post login/registrazione.
   const router = useRouter();
+  //Hook auth demo.
   const { login, register } = useAuth();
+  //Stato locale degli input.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  //Testi base del form.
   let title = "";
   let description = "";
   let submitLabel = "";
@@ -45,6 +50,7 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
       await register({ email, password });
     }
 
+    //Redirect semplice dopo l'azione.
     router.push("/");
   };
 

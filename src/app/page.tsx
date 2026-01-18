@@ -3,6 +3,7 @@ import Image from "next/image";
 import MaxWidthWrapper from "./components/MaxWidthWrapper";
 
 export default function Home() {
+  //Hero page pubblica.
   return (
     <div className="bg-slate-50">
       <section>
