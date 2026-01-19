@@ -1,18 +1,11 @@
 import { Check, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import FeaturedCarousel from "./components/FeaturedCarousel";
 import MaxWidthWrapper from "./components/MaxWidthWrapper";
-import { getProductById } from "../data/products";
+import SiteFooter from "./components/SiteFooter";
 
 export default function Home() {
-  //TODO:in futuro scegliere un prodotto casuale per la hero.
-  const featuredProductId = "1";
-  const featuredProduct = getProductById(featuredProductId);
-  const featuredName = featuredProduct ? featuredProduct.name : "Featured game";
-  const featuredPrice = featuredProduct ? featuredProduct.price : 0;
-  const featuredOriginalPrice = featuredProduct
-    ? featuredProduct.originalPrice
-    : undefined;
 
   //Hero page pubblica.
   return (
@@ -61,7 +54,7 @@ export default function Home() {
                   Browse the catalog
                 </Link>
                 <Link
-                  href="/products#how"
+                  href="/how-it-works"
                   className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:ring-slate-300"
                 >
                   How it works
@@ -142,59 +135,14 @@ export default function Home() {
 
           <div className="col-span-full lg:col-span-1 w-full flex justify-center px-8 sm:px-16 md:px-0 mt-32 lg:mx-0 lg:mt-20 h-fit relative z-10">
             <div className="relative md:max-w-xl w-full">
-              <div className="absolute -top-8 -left-8 h-40 w-40 rounded-full bg-emerald-200/70 blur-3xl" />
-              <div className="absolute -bottom-10 right-6 h-32 w-32 rounded-full bg-sky-200/70 blur-3xl" />
-              <div className="relative rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase tracking-widest text-slate-500">
-                    Featured deal
-                  </span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                    Save 35%
-                  </span>
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-slate-900">
-                  {featuredName}
-                </h3>
-                <div className="mt-5 flex items-center justify-between">
-                  <div>
-                    {featuredOriginalPrice ? (
-                      <p className="text-sm text-slate-400 line-through">
-                        ${featuredOriginalPrice.toFixed(2)}
-                      </p>
-                    ) : null}
-                    <p className="text-2xl font-bold text-slate-900">
-                      ${featuredPrice.toFixed(2)}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/products/${featuredProductId}`}
-                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-                  >
-                    Buy now
-                  </Link>
-                </div>
-                <div className="mt-6 grid grid-cols-3 gap-3 text-center text-xs text-slate-600">
-                  <div className="rounded-lg bg-slate-50 px-2 py-2">
-                    <p className="text-sm font-semibold text-slate-900">
-                      2 min
-                    </p>
-                    <p>Delivery</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 px-2 py-2">
-                    <p className="text-sm font-semibold text-slate-900">10k+</p>
-                    <p>Keys sold</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 px-2 py-2">
-                    <p className="text-sm font-semibold text-slate-900">24/7</p>
-                    <p>Support</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div className="absolute -top-8 -left-8 h-40 w-40 rounded-full bg-emerald-200/70 blur-3xl" />
+            <div className="absolute -bottom-10 right-6 h-32 w-32 rounded-full bg-sky-200/70 blur-3xl" />
+            <FeaturedCarousel />
           </div>
+        </div>
         </MaxWidthWrapper>
       </section>
+      <SiteFooter />
     </div>
   );
 }

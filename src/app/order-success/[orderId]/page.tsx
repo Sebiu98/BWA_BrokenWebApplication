@@ -17,6 +17,9 @@ const OrderSuccessPage = () => {
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  //TODO:vulnerabilita:IDOR su orderId se non si verifica il proprietario.
+  //TODO:vulnerabilita:riuso key se non viene marcata come usata nel backend.
+
   useEffect(() => {
     //Carica ordine dopo il primo render.
     const timer = window.setTimeout(() => {

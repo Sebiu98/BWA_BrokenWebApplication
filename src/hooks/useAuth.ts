@@ -13,6 +13,7 @@ import { mockUsers } from "../data/users";
 export type AuthCredentials = {
   email: string;
   password: string;
+  name?: string;
 };
 
 //Hook semplice per gestire la sessione demo.
@@ -74,16 +75,17 @@ export function useAuth() {
     }
   };
 
-  const register = async ({ email, password }: AuthCredentials) => {
+  const register = async ({ email, password, name }: AuthCredentials) => {
     //TODO:inviare registrazione al backend e salvare su Postgres.
     //TODO:hash password sul backend (bcrypt) prima di salvare.
     //TODO:assegnare ruolo "admin" in base agli account configurati dal backend/JWT.
     //Nome semplice ricavato dall'email (mock).
     void password;
-    const name = email.split("@")[0] || "New user";
+    const fallbackName = email.split("@")[0] || "New user";
+    const finalName = name ? name : fallbackName;
     const nextSession: AuthSession = {
       token: "demo-jwt-token",
-      user: { email, name, role: "user" },
+      user: { email, name: finalName, role: "user" },
     };
     writeSession(nextSession);
     setSession(nextSession);

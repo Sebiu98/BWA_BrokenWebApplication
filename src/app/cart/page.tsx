@@ -79,6 +79,9 @@ const CartPage = () => {
   const serviceFee = subtotal > 0 ? 1.99 : 0;
   const total = subtotal + serviceFee;
 
+  //TODO:vulnerabilita:manipolazione prezzi/quantita se il backend accetta il totale dal client.
+  //TODO:vulnerabilita:open redirect dopo add-to-cart (quando avremo backend).
+
   const handleQuantityChange = (productId: string, value: string) => {
     //Aggiorna la quantita e ricarica il carrello.
     let nextQuantity = Number(value);

@@ -65,6 +65,8 @@ const CheckoutPage = () => {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    //TODO:vulnerabilita:CSRF sulla conferma pagamento senza token.
+    //TODO:vulnerabilita:SSRF se la validazione del pagamento chiama URL esterne.
     //TODO:inviare ordine al backend e salvare su database.
     //TODO:validare pagamento lato server e creare record ordine.
     const orderId = "ord-" + Date.now();

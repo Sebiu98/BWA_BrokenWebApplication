@@ -11,6 +11,7 @@ import { products } from "../../data/products";
 const ProfilePage = () => {
   //Legge utente dalla sessione.
   const { user, isReady } = useAuth();
+  //TODO:vulnerabilita:IDOR se si permette di cambiare userId senza controlli server-side.
 
   //Se la sessione non e pronta, mostra un testo semplice.
   if (!isReady) {

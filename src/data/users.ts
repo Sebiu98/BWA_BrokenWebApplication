@@ -27,6 +27,7 @@ export const mockUsers: MockUser[] = [
     id: "u-2",
     name: "Sara Conti",
     email: "admin@bwa.local",
+    //TODO:vulnerabilita:credenziali admin deboli o di default.
     password: "admin1234",
     role: "admin",
     avatar: "/users/user-2.png",

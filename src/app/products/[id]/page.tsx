@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AddToCartButton from "../../components/AddToCartButton";
 import MaxWidthWrapper from "../../components/MaxWidthWrapper";
+import SiteFooter from "../../components/SiteFooter";
 import ProductComments from "../../components/ProductComments";
 import { getProductById, products } from "../../../data/products";
 
@@ -63,10 +64,12 @@ const ProductPage = async ({ params }: ProductPageProps) => {
     );
   }
 
+  //TODO:vulnerabilita:stored XSS se la descrizione arriva dal backend senza sanitizzazione.
   //Layout principale.
   return (
-    <main className="bg-slate-50">
-      <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-56 relative overflow-hidden">
+    <>
+      <main className="bg-slate-50">
+        <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-26 relative overflow-hidden">
         <Link href="/products" className="text-sm font-semibold text-slate-600">
           Back to catalog
         </Link>
@@ -152,8 +155,10 @@ const ProductPage = async ({ params }: ProductPageProps) => {
             {relatedCards}
           </div>
         </section>
-      </MaxWidthWrapper>
-    </main>
+        </MaxWidthWrapper>
+      </main>
+      <SiteFooter />
+    </>
   );
 };
 

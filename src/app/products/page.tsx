@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AddToCartButton from "../components/AddToCartButton";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
+import SiteFooter from "../components/SiteFooter";
 import { products } from "../../data/products";
 
 //Pagina catalogo con dati mock.
@@ -37,6 +38,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   const categoryText = resolvedParams.category
     ? resolvedParams.category.trim()
     : "";
+  //TODO:vulnerabilita:reflected XSS se la ricerca viene renderizzata senza escaping.
 
   const searchLower = searchText ? searchText.toLowerCase() : "";
 
@@ -171,8 +173,9 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
 
   //Layout principale della pagina.
   return (
-    <main className="bg-slate-50">
-      <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-56 relative overflow-hidden">
+    <>
+      <main className="bg-slate-50">
+        <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-26 relative overflow-hidden">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
@@ -187,7 +190,14 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
             </p>
           </div>
 
+        </div>
+
+        <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2 text-sm">{categoryLinks}</div>
           <form method="get" className="w-full max-w-md">
+            {categoryText ? (
+              <input type="hidden" name="category" value={categoryText} />
+            ) : null}
             <label className="block text-sm font-medium text-slate-700">
               Search
               <div className="mt-2 flex gap-2">
@@ -206,35 +216,8 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
                 </button>
               </div>
             </label>
-            <label className="mt-3 block text-sm font-medium text-slate-700">
-              Category
-              <div className="mt-2 flex gap-2">
-                <select
-                  name="category"
-                  defaultValue={categoryText}
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                >
-                  <option value="">All categories</option>
-                  {categories.map((categoryOption) => {
-                    return (
-                      <option key={categoryOption} value={categoryOption}>
-                        {categoryOption}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  type="submit"
-                  className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Apply
-                </button>
-              </div>
-            </label>
           </form>
         </div>
-
-        <div className="mt-8 flex flex-wrap gap-2 text-sm">{categoryLinks}</div>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {productCards}
@@ -268,8 +251,10 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
             </div>
           </div>
         </section>
-      </MaxWidthWrapper>
-    </main>
+        </MaxWidthWrapper>
+      </main>
+      <SiteFooter />
+    </>
   );
 };
 
