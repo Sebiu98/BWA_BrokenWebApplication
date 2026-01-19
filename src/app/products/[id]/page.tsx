@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AddToCartButton from "../../components/AddToCartButton";
 import MaxWidthWrapper from "../../components/MaxWidthWrapper";
 import ProductComments from "../../components/ProductComments";
 import { getProductById, products } from "../../../data/products";
@@ -114,9 +115,12 @@ const ProductPage = async ({ params }: ProductPageProps) => {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
+              <AddToCartButton
+                productId={product.id}
+                className="rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+              >
                 Add to cart
-              </button>
+              </AddToCartButton>
               <Link
                 href="/cart"
                 className="rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import AddToCartButton from "../components/AddToCartButton";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import { products } from "../../data/products";
 
@@ -157,12 +158,12 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
           >
             View details
           </Link>
-          <button
-            type="button"
+          <AddToCartButton
+            productId={product.id}
             className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             Add to cart
-          </button>
+          </AddToCartButton>
         </div>
       </div>
     );

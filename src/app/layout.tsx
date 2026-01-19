@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inconsolata } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 
@@ -12,6 +12,12 @@ const geistSans = Geist({
 //Font monospace.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+//Font Inconsolata.
+const inconsolata = Inconsolata({
+  variable: "--font-inconsolata",
   subsets: ["latin"],
 });
 
@@ -29,8 +35,10 @@ export default function RootLayout({
   //Layout principale con navbar.
   return (
     <html lang="en">
+      <head>
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inconsolata.variable} antialiased`}
       >
         <Navbar />
         {children}

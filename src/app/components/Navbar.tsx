@@ -1,16 +1,53 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MaxWidthWrapper from "./MaxWidthWrapper";
 import { ShoppingCart } from "lucide-react";
 import { buttonVariants } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
+import { readCart } from "../../lib/cart-storage";
 
 //Navbar principale con stato auth demo.
 const Navbar = () => {
   //Dati utente dalla sessione.
   const { user, isAdmin, logout } = useAuth();
+  //Conteggio semplice del carrello.
+  const [cartCount, setCartCount] = useState(0);
+  const [isCartReady, setIsCartReady] = useState(false);
+
+  useEffect(() => {
+    //Carica il carrello dopo il primo render.
+    const timer = window.setTimeout(() => {
+      const storedCart = readCart();
+      let total = 0;
+      for (let i = 0; i < storedCart.length; i += 1) {
+        total += storedCart[i].quantity;
+      }
+      setCartCount(total);
+      setIsCartReady(true);
+    }, 0);
+
+    //Aggiorna conteggio quando il carrello cambia.
+    const handleCartChange = () => {
+      const storedCart = readCart();
+      let total = 0;
+      for (let i = 0; i < storedCart.length; i += 1) {
+        total += storedCart[i].quantity;
+      }
+      setCartCount(total);
+    };
+
+    window.addEventListener("bwa-cart-change", handleCartChange);
+    window.addEventListener("storage", handleCartChange);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("bwa-cart-change", handleCartChange);
+      window.removeEventListener("storage", handleCartChange);
+    };
+  }, []);
 
   //Struttura navbar con logo, link e azioni.
   return (
@@ -69,11 +106,16 @@ const Navbar = () => {
                   href="/cart"
                   className={buttonVariants({
                     size: "sm",
-                    className: "hidden sm:flex items-center gap-1",
+                    className: "hidden sm:flex items-center gap-1 relative",
                   })}
                 >
                   Cart
                   <ShoppingCart className="ml-1.5 h-5 w-5" />
+                  {isCartReady && cartCount > 0 ? (
+                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                      {cartCount}
+                    </span>
+                  ) : null}
                 </Link>
               </>
             ) : (
@@ -96,11 +138,16 @@ const Navbar = () => {
                   href="/cart"
                   className={buttonVariants({
                     size: "sm",
-                    className: "hidden sm:flex items-center gap-1",
+                    className: "hidden sm:flex items-center gap-1 relative",
                   })}
                 >
                   Cart
                   <ShoppingCart className="ml-1.5 h-5 w-5" />
+                  {isCartReady && cartCount > 0 ? (
+                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                      {cartCount}
+                    </span>
+                  ) : null}
                 </Link>
               </>
             )}

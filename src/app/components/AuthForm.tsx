@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -12,6 +12,8 @@ type AuthMode = "login" | "register";
 const AuthForm = ({ mode }: { mode: AuthMode }) => {
   //Router per i redirect post login/registrazione.
   const router = useRouter();
+  //Legge il parametro next per redirect semplice.
+  const searchParams = useSearchParams();
   //Hook auth demo.
   const { login, register } = useAuth();
   //Stato locale degli input.
@@ -51,7 +53,12 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
     }
 
     //Redirect semplice dopo l'azione.
-    router.push("/");
+    const nextPath = searchParams.get("next");
+    if (nextPath) {
+      router.push(nextPath);
+    } else {
+      router.push("/");
+    }
   };
 
   return (

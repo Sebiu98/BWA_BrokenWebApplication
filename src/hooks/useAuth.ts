@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   type AuthSession,
-  type UserRole,
   clearSession,
   readSession,
   writeSession,
@@ -20,14 +19,16 @@ export type AuthCredentials = {
 export function useAuth() {
   //Sessione attuale letta dal browser.
   const [session, setSession] = useState<AuthSession | null>(null);
-  //Flag per capire se il client ha gia letto lo storage.
+  //Flag semplice per la UI.
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    //Carica la sessione al primo mount.
-    const storedSession = readSession();
-    setSession(storedSession);
-    setIsReady(true);
+    //Carica la sessione dopo il primo render per evitare mismatch.
+    const timer = window.setTimeout(() => {
+      const storedSession = readSession();
+      setSession(storedSession);
+      setIsReady(true);
+    }, 0);
     //Ascolta cambi di sessione (login/logout) senza refresh.
     const handleAuthChange = () => {
       const nextSession = readSession();
@@ -37,6 +38,7 @@ export function useAuth() {
     window.addEventListener("storage", handleAuthChange);
 
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("bwa-auth-change", handleAuthChange);
       window.removeEventListener("storage", handleAuthChange);
     };
