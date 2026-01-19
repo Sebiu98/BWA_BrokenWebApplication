@@ -53,42 +53,15 @@ const SiteFooter = () => {
             <h2 className="mt-2 text-lg font-semibold text-slate-900">
               Follow the journey
             </h2>
-            <div className="mx-auto mt-4 grid max-w-30 grid-cols-2 gap-3 text-sm text-slate-600 md:ml-auto md:mr-0">
-              <a
-                href="https://www.instagram.com/sebiu_/"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-900 transition hover:bg-slate-100"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="sr-only">Instagram</span>
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://www.facebook.com/seby.ciobanu"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-900 transition hover:bg-slate-100"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="sr-only">Facebook</span>
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="https://x.com/Sebiu98"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-900 transition hover:bg-slate-100"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span className="sr-only">X</span>
-                <Twitter className="h-5 w-5" />
-              </a>
+            <div className="mx-auto mt-4 flex max-w-xs justify-center md:ml-auto md:mr-0 md:justify-end">
               <a
                 href="https://github.com/Sebiu98"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-900 transition hover:bg-slate-100"
+                className="inline-flex items-center gap-3 rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                 target="_blank"
                 rel="noreferrer"
               >
-                <span className="sr-only">GitHub</span>
                 <Github className="h-5 w-5" />
+                <span>GitHub @Sebiu98</span>
               </a>
             </div>
           </div>
