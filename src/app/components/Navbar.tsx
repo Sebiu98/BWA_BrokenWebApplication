@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MaxWidthWrapper from "./MaxWidthWrapper";
-import { ShoppingCart } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  ShoppingCart,
+  User,
+  UserPlus,
+} from "lucide-react";
 import { buttonVariants } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
 import { readCart } from "../../lib/cart-storage";
@@ -82,23 +89,35 @@ const Navbar = () => {
                 </span>
                 <Link
                   href="/profile"
+                  aria-label="Profile"
+                  title="Profile"
                   className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
-                  Profile
+                  <span className="hidden sm:inline">Profile</span>
+                  <User className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 </Link>
                 <button
                   type="button"
                   onClick={logout}
+                  aria-label="Sign Out"
+                  title="Sign Out"
                   className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
-                  Sign Out
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <LogOut className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 </button>
                 {isAdmin ? (
                   <Link
                     href="/admin"
+                    aria-label="Dashboard"
+                    title="Dashboard"
                     className={buttonVariants({ size: "sm", variant: "ghost" })}
                   >
-                    Dashboard
+                    <span className="hidden sm:inline">Dashboard</span>
+                    <LayoutDashboard
+                      className="h-4 w-4 sm:hidden"
+                      aria-hidden="true"
+                    />
                   </Link>
                 ) : null}
 
@@ -122,15 +141,21 @@ const Navbar = () => {
               <>
                 <Link
                   href="/register"
+                  aria-label="Sign Up"
+                  title="Sign Up"
                   className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
-                  Sign Up
+                  <span className="hidden sm:inline">Sign Up</span>
+                  <UserPlus className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 </Link>
                 <Link
                   href="/login"
+                  aria-label="Login"
+                  title="Login"
                   className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
-                  Login
+                  <span className="hidden sm:inline">Login</span>
+                  <LogIn className="h-4 w-4 sm:hidden" aria-hidden="true" />
                 </Link>
 
                 <div className="h-8 w-px bg-zinc-200 sm:block" />
