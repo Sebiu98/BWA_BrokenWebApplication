@@ -126,24 +126,28 @@ const Navbar = () => {
                   className={buttonVariants({
                     size: "sm",
                     className:
-                      "hidden sm:flex items-center gap-2 rounded-full bg-slate-900 px-4 text-white shadow-sm hover:bg-slate-800",
+                      "hidden sm:flex items-center justify-center gap-2 rounded-full bg-slate-900 text-white shadow-sm hover:bg-slate-800 sm:w-10 sm:px-0 md:w-auto md:px-4",
                   })}
                 >
-                  <span>Catalog</span>
-                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden md:inline">Catalog</span>
+                  <ShoppingBag
+                    className="h-4 w-4 md:h-5 md:w-5"
+                    aria-hidden="true"
+                  />
                 </Link>
 
                 <Link
                   href="/cart"
                   className={buttonVariants({
                     size: "sm",
-                    className: "hidden sm:flex items-center gap-1 relative",
+                    className:
+                      "hidden sm:flex items-center justify-center gap-1 relative sm:w-10 sm:px-0 md:w-auto md:px-3",
                   })}
                 >
-                  Cart
-                  <ShoppingCart className="ml-1.5 h-5 w-5" />
+                  <span className="hidden md:inline">Cart</span>
+                  <ShoppingCart className="h-4 w-4 md:ml-1.5 md:h-5 md:w-5" />
                   {isCartReady && cartCount > 0 ? (
-                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700 sm:absolute sm:-right-1 sm:-top-1 sm:ml-0 md:static md:ml-1">
                       {cartCount}
                     </span>
                   ) : null}
@@ -178,23 +182,27 @@ const Navbar = () => {
                   className={buttonVariants({
                     size: "sm",
                     className:
-                      "hidden sm:flex items-center gap-2 rounded-full bg-slate-900 px-4 text-white shadow-sm hover:bg-slate-800",
+                      "hidden sm:flex items-center justify-center gap-2 rounded-full bg-slate-900 text-white shadow-sm hover:bg-slate-800 sm:w-10 sm:px-0 md:w-auto md:px-4",
                   })}
                 >
-                  <span>Catalog</span>
-                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden md:inline">Catalog</span>
+                  <ShoppingBag
+                    className="h-4 w-4 md:h-5 md:w-5"
+                    aria-hidden="true"
+                  />
                 </Link>
                 <Link
                   href="/cart"
                   className={buttonVariants({
                     size: "sm",
-                    className: "hidden sm:flex items-center gap-1 relative",
+                    className:
+                      "hidden sm:flex items-center justify-center gap-1 relative sm:w-10 sm:px-0 md:w-auto md:px-3",
                   })}
                 >
-                  Cart
-                  <ShoppingCart className="ml-1.5 h-5 w-5" />
+                  <span className="hidden md:inline">Cart</span>
+                  <ShoppingCart className="h-4 w-4 md:ml-1.5 md:h-5 md:w-5" />
                   {isCartReady && cartCount > 0 ? (
-                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                    <span className="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-700 sm:absolute sm:-right-1 sm:-top-1 sm:ml-0 md:static md:ml-1">
                       {cartCount}
                     </span>
                   ) : null}
