@@ -39,7 +39,7 @@ const SiteFooter = () => {
             </p>
             <p className="mt-3 text-sm text-slate-600">
               BWA Dojo is a student project focused on cybersecurity training
-              through a deliberately vulnerable storefront experience.
+              through a deliberately vulnerable web application.
             </p>
             <p className="mt-3 text-sm font-semibold text-slate-900">
               Built for hands-on learning

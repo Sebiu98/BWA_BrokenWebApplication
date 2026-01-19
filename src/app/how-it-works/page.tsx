@@ -93,10 +93,11 @@ const HowItWorksPage = () => {
               </div>
               <div className="rounded-xl bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-900">
-                  Support is always on
+                  Support by email
                 </p>
                 <p className="mt-2 text-sm text-slate-600">
-                  Use the support section if you experience issues with a key.
+                  Reach out using the contact emails in the footer if a key has
+                  issues.
                 </p>
               </div>
             </div>
