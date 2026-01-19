@@ -54,18 +54,18 @@ export default function Home() {
               </p>
 
               <div className="mt-8 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:justify-start">
-                <a
+                <Link
                   href="/products"
                   className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition hover:bg-slate-800"
                 >
                   Browse the catalog
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/products#how"
                   className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:ring-slate-300"
                 >
                   How it works
-                </a>
+                </Link>
               </div>
 
               <ul className="mt-8 space-y-2 text-left font-medium flex flex-col items-center sm:items-start">
