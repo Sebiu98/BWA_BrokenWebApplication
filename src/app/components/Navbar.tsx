@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
+  ShoppingBag,
   ShoppingCart,
   User,
   UserPlus,
@@ -84,9 +85,6 @@ const Navbar = () => {
           <div className="h-full flex items-center space-x-4">
             {user ? (
               <>
-                <span className="hidden text-sm text-slate-600 sm:block">
-                  Hi, {user.name}
-                </span>
                 <Link
                   href="/profile"
                   aria-label="Profile"
@@ -120,6 +118,20 @@ const Navbar = () => {
                     />
                   </Link>
                 ) : null}
+                <div className="hidden h-8 w-px bg-zinc-200 sm:block" />
+                <Link
+                  href="/products"
+                  aria-label="Catalog"
+                  title="Catalog"
+                  className={buttonVariants({
+                    size: "sm",
+                    className:
+                      "hidden sm:flex items-center gap-2 rounded-full bg-slate-900 px-4 text-white shadow-sm hover:bg-slate-800",
+                  })}
+                >
+                  <span>Catalog</span>
+                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                </Link>
 
                 <Link
                   href="/cart"
