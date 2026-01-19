@@ -10,9 +10,6 @@ const HowItWorksPage = () => {
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:pt-10 xl:pt-5 lg:pb-26">
           <div className="flex flex-col gap-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-              How it works
-            </p>
             <h1 className="text-3xl font-semibold text-slate-900 md:text-4xl">
               Buying game keys with BWA
             </h1>

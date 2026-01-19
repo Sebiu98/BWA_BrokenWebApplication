@@ -135,9 +135,6 @@ const AdminPage = () => {
     <main className="bg-slate-50">
       <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:pt-10 xl:pt-5 lg:pb-56">
         <div className="flex flex-col gap-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-            Admin panel
-          </p>
           <h1 className="text-3xl font-semibold text-slate-900 md:text-4xl">
             Dashboard overview
           </h1>

@@ -178,9 +178,6 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
         <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-26 relative overflow-hidden">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-              BWA Catalog
-            </p>
             <h1 className="mt-2 text-3xl font-semibold text-slate-900 md:text-4xl">
               Browse instant game keys
             </h1>
