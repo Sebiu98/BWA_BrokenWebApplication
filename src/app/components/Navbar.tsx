@@ -172,6 +172,19 @@ const Navbar = () => {
 
                 <div className="h-8 w-px bg-zinc-200 sm:block" />
                 <Link
+                  href="/products"
+                  aria-label="Catalog"
+                  title="Catalog"
+                  className={buttonVariants({
+                    size: "sm",
+                    className:
+                      "hidden sm:flex items-center gap-2 rounded-full bg-slate-900 px-4 text-white shadow-sm hover:bg-slate-800",
+                  })}
+                >
+                  <span>Catalog</span>
+                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link
                   href="/cart"
                   className={buttonVariants({
                     size: "sm",
