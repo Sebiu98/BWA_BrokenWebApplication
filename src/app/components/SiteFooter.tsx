@@ -1,4 +1,4 @@
-import { Instagram, Facebook, Twitter, Github } from "lucide-react";
+import { Github } from "lucide-react";
 import MaxWidthWrapper from "./MaxWidthWrapper";
 
 const SiteFooter = () => {

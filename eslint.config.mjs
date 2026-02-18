@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore Laravel backend generated/third-party files.
+    "backend/vendor/**",
+    "backend/storage/**",
+    "backend/public/build/**",
+    "backend/bootstrap/cache/**",
   ]),
 ]);
 

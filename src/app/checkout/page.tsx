@@ -10,7 +10,6 @@ import {
   type CatalogProduct,
 } from "../../lib/api";
 import { type CartItem, clearCart, readCart } from "../../lib/cart-storage";
-import { writeLastOrder } from "../../lib/order-storage";
 import { useAuth } from "../../hooks/useAuth";
 
 //Pagina checkout con login obbligatorio.
@@ -79,8 +78,7 @@ const CheckoutPage = () => {
     });
   }
 
-  const serviceFee = subtotal > 0 ? 1.99 : 0;
-  const total = subtotal + serviceFee;
+  const total = subtotal;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -118,18 +116,6 @@ const CheckoutPage = () => {
 
       const createdOrder = response.order;
       const createdOrderId = `ord-${createdOrder.id}`;
-      const createdOrderDate = createdOrder.created_at
-        ? new Date(createdOrder.created_at).toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
-
-      writeLastOrder({
-        id: createdOrderId,
-        items: cartItems,
-        total: Number(createdOrder.total_amount),
-        date: createdOrderDate,
-        userEmail: user.email,
-      });
-
       clearCart();
       setCartItems([]);
       router.push(`/order-success/${createdOrderId}`);
@@ -327,10 +313,6 @@ const CheckoutPage = () => {
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Service fee</span>
-                <span>${serviceFee.toFixed(2)}</span>
               </div>
               <div className="border-t border-slate-200 pt-3 text-base font-semibold text-slate-900">
                 <div className="flex items-center justify-between">
