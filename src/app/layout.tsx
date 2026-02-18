@@ -35,8 +35,7 @@ export default function RootLayout({
   //Layout principale con navbar.
   return (
     <html lang="en">
-      <head>
-      </head>
+      <head></head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inconsolata.variable} antialiased`}
       >

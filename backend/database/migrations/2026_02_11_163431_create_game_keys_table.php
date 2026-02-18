@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('game_keys', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->unique()->constrained('orders')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->string('key_value')->unique();
+            $table->boolean('is_used')->default(false);
+            $table->timestamp('assigned_at')->nullable();
             $table->timestamps();
         });
     }

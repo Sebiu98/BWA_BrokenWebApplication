@@ -3,29 +3,68 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { products } from "../../data/products";
+import { getApiProducts, type CatalogProduct } from "../../lib/api";
 
 //Carosello prodotti scontati.
 const FeaturedCarousel = () => {
-  //Lista scontati.
-  const discountedProducts = [];
-  for (let i = 0; i < products.length; i += 1) {
-    if (products[i].originalPrice) {
-      discountedProducts.push(products[i]);
-    }
-  }
+  //Prodotti caricati dal backend.
+  const [featuredProducts, setFeaturedProducts] = useState<CatalogProduct[]>(
+    [],
+  );
+  const [isLoading, setIsLoading] = useState(true);
 
   //Indice attivo del carosello.
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    if (discountedProducts.length <= 1) {
+    //Carica prodotti dal backend.
+    const loadProducts = async () => {
+      try {
+        const apiProducts = await getApiProducts("", "");
+
+        //Usa solo prodotti scontati e sceglie 3 elementi casuali.
+        const discounted = apiProducts.filter(
+          (item) => item.discountPercentage > 0,
+        );
+        if (discounted.length === 0) {
+          setFeaturedProducts([]);
+        } else {
+          const shuffled = [...discounted].sort(
+            (a, b) => Number(a.id) - Number(b.id),
+          );
+          for (let i = shuffled.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = shuffled[i];
+            shuffled[i] = shuffled[j];
+            shuffled[j] = temp;
+          }
+
+          setFeaturedProducts(shuffled.slice(0, 3));
+        }
+      } catch {
+        setFeaturedProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
+    if (activeIndex >= featuredProducts.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, featuredProducts.length]);
+
+  useEffect(() => {
+    if (featuredProducts.length <= 1) {
       return;
     }
 
     const timer = window.setInterval(() => {
       setActiveIndex((prev) => {
-        if (prev + 1 >= discountedProducts.length) {
+        if (prev + 1 >= featuredProducts.length) {
           return 0;
         }
         return prev + 1;
@@ -35,20 +74,18 @@ const FeaturedCarousel = () => {
     return () => {
       window.clearInterval(timer);
     };
-  }, [discountedProducts.length]);
+  }, [featuredProducts.length]);
 
   const currentProduct =
-    discountedProducts.length > 0
-      ? discountedProducts[activeIndex]
-      : null;
-  const hasMultiple = discountedProducts.length > 1;
+    featuredProducts.length > 0 ? featuredProducts[activeIndex] : null;
+  const hasMultiple = featuredProducts.length > 1;
 
   const goNext = () => {
-    if (discountedProducts.length === 0) {
+    if (featuredProducts.length === 0) {
       return;
     }
     setActiveIndex((prev) => {
-      if (prev + 1 >= discountedProducts.length) {
+      if (prev + 1 >= featuredProducts.length) {
         return 0;
       }
       return prev + 1;
@@ -56,16 +93,24 @@ const FeaturedCarousel = () => {
   };
 
   const goPrev = () => {
-    if (discountedProducts.length === 0) {
+    if (featuredProducts.length === 0) {
       return;
     }
     setActiveIndex((prev) => {
       if (prev - 1 < 0) {
-        return discountedProducts.length - 1;
+        return featuredProducts.length - 1;
       }
       return prev - 1;
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="relative rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
+        <p className="text-sm text-slate-600">Loading featured products...</p>
+      </div>
+    );
+  }
 
   if (!currentProduct) {
     return (
@@ -85,15 +130,11 @@ const FeaturedCarousel = () => {
     );
   }
 
-  const originalPrice = currentProduct.originalPrice
-    ? currentProduct.originalPrice
-    : currentProduct.price;
-  const discountPercent =
-    originalPrice > 0
-      ? Math.round(
-          ((originalPrice - currentProduct.price) / originalPrice) * 100
-        )
-      : 0;
+  const originalPrice = currentProduct.originalPrice ?? currentProduct.price;
+  const discountPercent = currentProduct.discountPercentage;
+  const hasDiscount =
+    currentProduct.originalPrice !== undefined &&
+    currentProduct.originalPrice > currentProduct.price;
 
   return (
     <div className="relative rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200">
@@ -122,9 +163,15 @@ const FeaturedCarousel = () => {
               </button>
             </div>
           ) : null}
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-            Save {discountPercent}%
-          </span>
+          {hasDiscount ? (
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+              Save {discountPercent}%
+            </span>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+              Featured
+            </span>
+          )}
         </div>
       </div>
       <h3 className="mt-4 text-lg font-semibold text-slate-900">
@@ -162,7 +209,7 @@ const FeaturedCarousel = () => {
       </div>
       {hasMultiple ? (
         <div className="mt-4 flex items-center justify-center gap-2">
-          {discountedProducts.map((item, index) => {
+          {featuredProducts.map((item, index) => {
             const isActive = index === activeIndex;
             return (
               <button

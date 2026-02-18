@@ -3,7 +3,7 @@ import Link from "next/link";
 import AddToCartButton from "../components/AddToCartButton";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import SiteFooter from "../components/SiteFooter";
-import { products } from "../../data/products";
+import { getApiCategories, getApiProducts } from "../../lib/api";
 
 //Pagina catalogo con dati mock.
 type ProductsPageProps = {
@@ -42,41 +42,14 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
 
   const searchLower = searchText ? searchText.toLowerCase() : "";
 
-  //Lista categorie unica.
+  //Legge categorie e prodotti dal backend Laravel.
+  //TODO:in futuro aggiungere fallback robusto se l'API non risponde.
+  const categoriesData = await getApiCategories();
+  const filteredProducts = await getApiProducts(searchText, categoryText);
+
   const categories: string[] = [];
-  for (let i = 0; i < products.length; i += 1) {
-    const categoryName = products[i].category;
-    if (!categories.includes(categoryName)) {
-      categories.push(categoryName);
-    }
-  }
-  categories.sort();
-
-  //Filtra i prodotti in base a search e categoria.
-  const filteredProducts = [];
-  for (let i = 0; i < products.length; i += 1) {
-    const product = products[i];
-    let matchesSearch = true;
-    let matchesCategory = true;
-
-    if (searchLower) {
-      const name = product.name.toLowerCase();
-      const description = product.description.toLowerCase();
-      if (!name.includes(searchLower) && !description.includes(searchLower)) {
-        matchesSearch = false;
-      }
-    }
-
-    if (categoryText) {
-      const productCategory = product.category.toLowerCase();
-      if (productCategory !== categoryText.toLowerCase()) {
-        matchesCategory = false;
-      }
-    }
-
-    if (matchesSearch && matchesCategory) {
-      filteredProducts.push(product);
-    }
+  for (let i = 0; i < categoriesData.length; i += 1) {
+    categories.push(categoriesData[i].name);
   }
 
   //Link rapidi per le categorie.
@@ -88,13 +61,12 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   categoryLinks.push(
     <Link key="all" href={makeLink(searchText, "")} className={allClassName}>
       All
-    </Link>
+    </Link>,
   );
 
   for (let i = 0; i < categories.length; i += 1) {
     const categoryName = categories[i];
-    const isActive =
-      categoryName.toLowerCase() === categoryText.toLowerCase();
+    const isActive = categoryName.toLowerCase() === categoryText.toLowerCase();
     const linkClassName = isActive
       ? "rounded-full border border-slate-900 px-3 py-1 text-slate-900 transition"
       : "rounded-full border border-slate-200 px-3 py-1 text-slate-600 transition hover:border-slate-300";
@@ -106,7 +78,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
         className={linkClassName}
       >
         {categoryName}
-      </Link>
+      </Link>,
     );
   }
 
@@ -120,11 +92,16 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
         className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
       >
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <span className="uppercase tracking-[0.2em]">
-            {product.category}
-          </span>
+          <span className="uppercase tracking-[0.2em]">{product.category}</span>
           <span>{product.platform}</span>
         </div>
+        {product.discountPercentage > 0 ? (
+          <div className="mt-2">
+            <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+              -{product.discountPercentage}%
+            </span>
+          </div>
+        ) : null}
         <div className="mt-4 flex h-36 items-center justify-center rounded-xl bg-slate-50">
           <Image
             src={product.image}
@@ -150,7 +127,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
             </p>
           </div>
           <div className="text-sm text-slate-600">
-            {product.rating.toFixed(1)} / 5
+            {searchLower ? "Filtered" : `${product.rating.toFixed(1)} / 5`}
           </div>
         </div>
         <div className="mt-6 flex gap-2">
@@ -167,7 +144,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
             Add to cart
           </AddToCartButton>
         </div>
-      </div>
+      </div>,
     );
   }
 
@@ -176,78 +153,80 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
     <>
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-26 relative overflow-hidden">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900 md:text-4xl">
-              Browse instant game keys
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-600 md:text-base">
-              Find the best deals on verified keys, delivered instantly after
-              checkout.
-            </p>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-900 md:text-4xl">
+                Browse instant game keys
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-slate-600 md:text-base">
+                Find the best deals on verified keys, delivered instantly after
+                checkout.
+              </p>
+            </div>
           </div>
 
-        </div>
+          <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2 text-sm">{categoryLinks}</div>
+            <form method="get" className="w-full max-w-md">
+              {categoryText ? (
+                <input type="hidden" name="category" value={categoryText} />
+              ) : null}
+              <label className="block text-sm font-medium text-slate-700">
+                Search
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    name="search"
+                    defaultValue={searchText}
+                    placeholder="Search by game or genre"
+                    className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                  >
+                    Search
+                  </button>
+                </div>
+              </label>
+            </form>
+          </div>
 
-        <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2 text-sm">{categoryLinks}</div>
-          <form method="get" className="w-full max-w-md">
-            {categoryText ? (
-              <input type="hidden" name="category" value={categoryText} />
-            ) : null}
-            <label className="block text-sm font-medium text-slate-700">
-              Search
-              <div className="mt-2 flex gap-2">
-                <input
-                  type="text"
-                  name="search"
-                  defaultValue={searchText}
-                  placeholder="Search by game or genre"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-                >
-                  Search
-                </button>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {productCards}
+          </div>
+
+          <section
+            id="how"
+            className="mt-16 rounded-2xl bg-white p-8 shadow-sm"
+          >
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Choose your game
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Browse verified keys and lock in the best price.
+                </p>
               </div>
-            </label>
-          </form>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {productCards}
-        </div>
-
-        <section id="how" className="mt-16 rounded-2xl bg-white p-8 shadow-sm">
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Choose your game
-              </h3>
-              <p className="text-sm text-slate-600">
-                Browse verified keys and lock in the best price.
-              </p>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Secure checkout
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Complete payment with instant confirmation.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Play instantly
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Receive your key immediately and start playing.
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Secure checkout
-              </h3>
-              <p className="text-sm text-slate-600">
-                Complete payment with instant confirmation.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Play instantly
-              </h3>
-              <p className="text-sm text-slate-600">
-                Receive your key immediately and start playing.
-              </p>
-            </div>
-          </div>
-        </section>
+          </section>
         </MaxWidthWrapper>
       </main>
       <SiteFooter />

@@ -1,21 +1,58 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
-import { products } from "../../data/products";
-import { mockUsers } from "../../data/users";
-import { orders } from "../../data/orders";
+import {
+  getApiAdminOrders,
+  getApiAdminProducts,
+  getApiUsers,
+  type ApiOrder,
+} from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 
-//Dashboard admin con dati mock.
+//Dashboard admin con dati letti da API.
 const AdminPage = () => {
   //Dati utente dalla sessione.
-  const { user, isAdmin, isReady } = useAuth();
+  const { user, session, isAdmin, isReady } = useAuth();
+  const [productsCount, setProductsCount] = useState(0);
+  const [usersCount, setUsersCount] = useState(0);
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [isProductsReady, setIsProductsReady] = useState(false);
 
   //TODO:vulnerabilita:accesso admin senza controlli server-side.
   //TODO:vulnerabilita:privilege escalation se il ruolo e solo client-side.
 
-  if (!isReady) {
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const [products, users, adminOrders] = await Promise.all([
+          session?.token && isAdmin
+            ? getApiAdminProducts(session.token)
+            : Promise.resolve([]),
+          session?.token && isAdmin
+            ? getApiUsers(session.token)
+            : Promise.resolve([]),
+          session?.token && isAdmin
+            ? getApiAdminOrders(session.token)
+            : Promise.resolve([]),
+        ]);
+        setProductsCount(products.length);
+        setUsersCount(users.length);
+        setOrders(adminOrders);
+      } catch {
+        setProductsCount(0);
+        setUsersCount(0);
+        setOrders([]);
+      } finally {
+        setIsProductsReady(true);
+      }
+    };
+
+    void loadDashboardData();
+  }, [isAdmin, session?.token]);
+
+  if (!isReady || !isProductsReady) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -74,12 +111,12 @@ const AdminPage = () => {
   //Calcola dati principali.
   let totalRevenue = 0;
   for (let i = 0; i < orders.length; i += 1) {
-    totalRevenue += orders[i].total;
+    totalRevenue += Number(orders[i].total_amount);
   }
 
   const stats = [
-    { label: "Total users", value: String(mockUsers.length) },
-    { label: "Products", value: String(products.length) },
+    { label: "Total users", value: String(usersCount) },
+    { label: "Products", value: String(productsCount) },
     { label: "Orders", value: String(orders.length) },
     { label: "Revenue", value: "$" + totalRevenue.toFixed(2) },
   ];
@@ -98,7 +135,7 @@ const AdminPage = () => {
         <p className="mt-2 text-2xl font-semibold text-slate-900">
           {stat.value}
         </p>
-      </div>
+      </div>,
     );
   }
 
@@ -117,17 +154,21 @@ const AdminPage = () => {
         className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
       >
         <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>Order {order.id}</span>
+          <span>Order ord-{order.id}</span>
           <span>{order.status}</span>
         </div>
-        <p className="text-sm text-slate-600">{order.userEmail}</p>
+        <p className="text-sm text-slate-600">{order.user?.email ?? "-"}</p>
         <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>{order.date}</span>
+          <span>
+            {order.created_at
+              ? new Date(order.created_at).toLocaleDateString()
+              : "-"}
+          </span>
           <span className="font-semibold text-slate-900">
-            ${order.total.toFixed(2)}
+            ${Number(order.total_amount).toFixed(2)}
           </span>
         </div>
-      </div>
+      </div>,
     );
   }
 

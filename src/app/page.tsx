@@ -4,9 +4,9 @@ import Link from "next/link";
 import FeaturedCarousel from "./components/FeaturedCarousel";
 import MaxWidthWrapper from "./components/MaxWidthWrapper";
 import SiteFooter from "./components/SiteFooter";
+import { userAvatars } from "../lib/user-avatars";
 
 export default function Home() {
-
   //Hero page pubblica.
   return (
     <div className="bg-slate-50">
@@ -80,41 +80,16 @@ export default function Home() {
 
               <div className="mt-12 flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 <div className="flex -space-x-4">
-                  <Image
-                    className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src={"/users/user-1.png"}
-                    alt="user image"
-                    width={40}
-                    height={40}
-                  />
-                  <Image
-                    className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src={"/users/user-2.png"}
-                    alt="user image"
-                    width={40}
-                    height={40}
-                  />
-                  <Image
-                    className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src={"/users/user-3.png"}
-                    alt="user image"
-                    width={40}
-                    height={40}
-                  />
-                  <Image
-                    className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src={"/users/user-4.jpg"}
-                    alt="user image"
-                    width={40}
-                    height={40}
-                  />
-                  <Image
-                    className="inline-block object-cover h-10 w-10 rounded-full ring-2 ring-slate-100"
-                    src={"/users/user-5.jpg"}
-                    alt="user image"
-                    width={40}
-                    height={40}
-                  />
+                  {userAvatars.slice(0, 5).map((avatarPath) => (
+                    <Image
+                      key={avatarPath}
+                      className="inline-block h-10 w-10 rounded-full ring-2 ring-slate-100 object-cover"
+                      src={avatarPath}
+                      alt="user image"
+                      width={40}
+                      height={40}
+                    />
+                  ))}
                 </div>
                 <div className="flex flex-col justify-between items-center sm:items-start">
                   <div className="flex gap-0.5">
@@ -135,11 +110,11 @@ export default function Home() {
 
           <div className="col-span-full lg:col-span-1 w-full flex justify-center px-8 sm:px-16 md:px-0 mt-32 lg:mx-0 lg:mt-20 h-fit relative z-10">
             <div className="relative md:max-w-xl w-full">
-            <div className="absolute -top-8 -left-8 h-40 w-40 rounded-full bg-emerald-200/70 blur-3xl" />
-            <div className="absolute -bottom-10 right-6 h-32 w-32 rounded-full bg-sky-200/70 blur-3xl" />
-            <FeaturedCarousel />
+              <div className="absolute -top-8 -left-8 h-40 w-40 rounded-full bg-emerald-200/70 blur-3xl" />
+              <div className="absolute -bottom-10 right-6 h-32 w-32 rounded-full bg-sky-200/70 blur-3xl" />
+              <FeaturedCarousel />
+            </div>
           </div>
-        </div>
         </MaxWidthWrapper>
       </section>
       <SiteFooter />

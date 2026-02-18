@@ -18,9 +18,13 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
   const { login, register } = useAuth();
   //Stato locale degli input.
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   //Testi base del form.
   let title = "";
   let description = "";
@@ -47,32 +51,56 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrorMessage("");
+    setIsSubmitting(true);
 
     //TODO:vulnerabilita:login senza rate limit per brute force.
     //TODO:vulnerabilita:SQLi nel backend se la query non e parametrizzata.
     //TODO:vulnerabilita:token di sessione prevedibile o non rigenerato.
-    if (mode === "login") {
-      await login({ email, password });
-    } else {
-      //Controlla username e conferma password.
-      const trimmedUsername = username.trim();
-      if (!trimmedUsername) {
-        alert("Please enter a username.");
-        return;
+    try {
+      if (mode === "login") {
+        await login({ email, password });
+      } else {
+        //Controlla username e conferma password.
+        const trimmedUsername = username.trim();
+        const trimmedName = name.trim();
+        const trimmedSurname = surname.trim();
+        if (!trimmedUsername) {
+          throw new Error("Please enter a username.");
+        }
+        if (!trimmedName) {
+          throw new Error("Please enter your name.");
+        }
+        if (!trimmedSurname) {
+          throw new Error("Please enter your surname.");
+        }
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match.");
+        }
+        await register({
+          email,
+          password,
+          username: trimmedUsername,
+          name: trimmedName,
+          surname: trimmedSurname,
+        });
       }
-      if (password !== confirmPassword) {
-        alert("Passwords do not match.");
-        return;
-      }
-      await register({ email, password, name: trimmedUsername });
-    }
 
-    //Redirect semplice dopo l'azione.
-    const nextPath = searchParams.get("next");
-    if (nextPath) {
-      router.push(nextPath);
-    } else {
-      router.push("/");
+      //Redirect semplice dopo l'azione.
+      const nextPath = searchParams.get("next");
+      if (nextPath) {
+        router.push(nextPath);
+      } else {
+        router.push("/");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Authentication failed.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,6 +110,32 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
       <p className="mt-2 text-sm text-slate-600">{description}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {mode === "register" ? (
+          <label className="block text-sm font-medium text-slate-700">
+            Name
+            <input
+              type="text"
+              required
+              autoComplete="given-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            />
+          </label>
+        ) : null}
+        {mode === "register" ? (
+          <label className="block text-sm font-medium text-slate-700">
+            Surname
+            <input
+              type="text"
+              required
+              autoComplete="family-name"
+              value={surname}
+              onChange={(event) => setSurname(event.target.value)}
+              className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            />
+          </label>
+        ) : null}
         {mode === "register" ? (
           <label className="block text-sm font-medium text-slate-700">
             Username
@@ -112,7 +166,9 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
           <input
             type="password"
             required
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            autoComplete={
+              mode === "login" ? "current-password" : "new-password"
+            }
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
@@ -132,7 +188,13 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
           </label>
         ) : null}
 
-        <Button type="submit" className="w-full">
+        {errorMessage ? (
+          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
           {submitLabel}
         </Button>
       </form>

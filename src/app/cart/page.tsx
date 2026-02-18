@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
-import { products } from "../../data/products";
+import { getApiProducts, type CatalogProduct } from "../../lib/api";
 import {
   type CartItem,
   clearCart,
@@ -17,14 +17,22 @@ import {
 const CartPage = () => {
   //Stato locale del carrello.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     //Carica il carrello dopo il primo render.
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       const storedCart = readCart();
       setCartItems(storedCart);
-      setIsReady(true);
+      try {
+        const apiProducts = await getApiProducts("", "");
+        setProductsCatalog(apiProducts);
+      } catch {
+        setProductsCatalog([]);
+      } finally {
+        setIsReady(true);
+      }
     }, 0);
 
     //Aggiorna il carrello quando cambia altrove.
@@ -50,6 +58,8 @@ const CartPage = () => {
     image: string;
     platform: string;
     price: number;
+    originalPrice?: number;
+    discountPercentage: number;
     quantity: number;
     lineTotal: number;
   }[] = [];
@@ -58,7 +68,9 @@ const CartPage = () => {
 
   for (let i = 0; i < cartItems.length; i += 1) {
     const cartItem = cartItems[i];
-    const product = products.find((item) => item.id === cartItem.productId);
+    const product = productsCatalog.find(
+      (item) => item.id === cartItem.productId,
+    );
     if (!product) {
       continue;
     }
@@ -71,6 +83,8 @@ const CartPage = () => {
       image: product.image,
       platform: product.platform,
       price: product.price,
+      originalPrice: product.originalPrice,
+      discountPercentage: product.discountPercentage,
       quantity: cartItem.quantity,
       lineTotal,
     });
@@ -149,7 +163,8 @@ const CartPage = () => {
             Review your items
           </h1>
           <p className="text-sm text-slate-600">
-            You have {totalItems} item{totalItems === 1 ? "" : "s"} in your cart.
+            You have {totalItems} item{totalItems === 1 ? "" : "s"} in your
+            cart.
           </p>
         </div>
 
@@ -177,7 +192,19 @@ const CartPage = () => {
                     <h2 className="mt-2 text-lg font-semibold text-slate-900">
                       {item.name}
                     </h2>
+                    {item.discountPercentage > 0 ? (
+                      <p className="mt-1">
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          -{item.discountPercentage}%
+                        </span>
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-sm text-slate-600">
+                      {item.originalPrice ? (
+                        <span className="mr-2 text-xs text-slate-400 line-through">
+                          ${item.originalPrice.toFixed(2)}
+                        </span>
+                      ) : null}
                       ${item.price.toFixed(2)}
                     </p>
                   </div>
@@ -189,7 +216,10 @@ const CartPage = () => {
                         min="1"
                         value={item.quantity}
                         onChange={(event) =>
-                          handleQuantityChange(item.productId, event.target.value)
+                          handleQuantityChange(
+                            item.productId,
+                            event.target.value,
+                          )
                         }
                         className="mt-1 w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                       />

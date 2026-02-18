@@ -4,7 +4,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
-import { products } from "../../data/products";
+import {
+  createApiOrder,
+  getApiProducts,
+  type CatalogProduct,
+} from "../../lib/api";
 import { type CartItem, clearCart, readCart } from "../../lib/cart-storage";
 import { writeLastOrder } from "../../lib/order-storage";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,17 +18,27 @@ const CheckoutPage = () => {
   //Router per simulare il redirect post ordine.
   const router = useRouter();
   //Dati utente dalla sessione demo.
-  const { user, isAuthenticated, isReady: isAuthReady } = useAuth();
+  const { user, session, isAuthenticated, isReady: isAuthReady } = useAuth();
   //Stato locale carrello.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
   const [isCartReady, setIsCartReady] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     //Carica il carrello dopo il primo render.
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       const storedCart = readCart();
       setCartItems(storedCart);
-      setIsCartReady(true);
+      try {
+        const apiProducts = await getApiProducts("", "");
+        setProductsCatalog(apiProducts);
+      } catch {
+        setProductsCatalog([]);
+      } finally {
+        setIsCartReady(true);
+      }
     }, 0);
 
     return () => {
@@ -37,6 +51,8 @@ const CheckoutPage = () => {
     productId: string;
     name: string;
     price: number;
+    originalPrice?: number;
+    discountPercentage: number;
     quantity: number;
     lineTotal: number;
   }[] = [];
@@ -44,7 +60,9 @@ const CheckoutPage = () => {
 
   for (let i = 0; i < cartItems.length; i += 1) {
     const cartItem = cartItems[i];
-    const product = products.find((item) => item.id === cartItem.productId);
+    const product = productsCatalog.find(
+      (item) => item.id === cartItem.productId,
+    );
     if (!product) {
       continue;
     }
@@ -54,6 +72,8 @@ const CheckoutPage = () => {
       productId: product.id,
       name: product.name,
       price: product.price,
+      originalPrice: product.originalPrice,
+      discountPercentage: product.discountPercentage,
       quantity: cartItem.quantity,
       lineTotal,
     });
@@ -62,28 +82,66 @@ const CheckoutPage = () => {
   const serviceFee = subtotal > 0 ? 1.99 : 0;
   const total = subtotal + serviceFee;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrorMessage("");
 
     //TODO:vulnerabilita:CSRF sulla conferma pagamento senza token.
     //TODO:vulnerabilita:SSRF se la validazione del pagamento chiama URL esterne.
-    //TODO:inviare ordine al backend e salvare su database.
-    //TODO:validare pagamento lato server e creare record ordine.
-    const orderId = "ord-" + Date.now();
-    const orderDate = new Date().toISOString().slice(0, 10);
-    const orderUserEmail = user?.email || "unknown";
+    if (!session?.token || !user) {
+      setErrorMessage("Please login again and retry checkout.");
+      return;
+    }
 
-    writeLastOrder({
-      id: orderId,
-      items: cartItems,
-      total,
-      date: orderDate,
-      userEmail: orderUserEmail,
-    });
+    const payloadItems = cartItems
+      .map((item) => {
+        const productId = Number(item.productId);
+        return {
+          product_id: productId,
+          quantity: item.quantity,
+        };
+      })
+      .filter(
+        (item) => Number.isFinite(item.product_id) && item.product_id > 0,
+      );
 
-    clearCart();
-    setCartItems([]);
-    router.push(`/order-success/${orderId}`);
+    if (payloadItems.length === 0) {
+      setErrorMessage("Your cart contains invalid items.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await createApiOrder(session.token, {
+        items: payloadItems,
+      });
+
+      const createdOrder = response.order;
+      const createdOrderId = `ord-${createdOrder.id}`;
+      const createdOrderDate = createdOrder.created_at
+        ? new Date(createdOrder.created_at).toISOString().slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+
+      writeLastOrder({
+        id: createdOrderId,
+        items: cartItems,
+        total: Number(createdOrder.total_amount),
+        date: createdOrderDate,
+        userEmail: user.email,
+      });
+
+      clearCart();
+      setCartItems([]);
+      router.push(`/order-success/${createdOrderId}`);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Checkout failed.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isAuthReady || !isCartReady) {
@@ -227,10 +285,16 @@ const CheckoutPage = () => {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="mt-6 w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
-              Place order
+              {isSubmitting ? "Processing..." : "Place order"}
             </button>
+            {errorMessage ? (
+              <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {errorMessage}
+              </p>
+            ) : null}
           </form>
 
           <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -244,8 +308,15 @@ const CheckoutPage = () => {
                     key={item.productId}
                     className="flex items-center justify-between text-sm text-slate-600"
                   >
-                    <span>
-                      {item.name} x {item.quantity}
+                    <span className="flex flex-col">
+                      <span>
+                        {item.name} x {item.quantity}
+                      </span>
+                      {item.discountPercentage > 0 ? (
+                        <span className="text-xs font-semibold text-emerald-700">
+                          -{item.discountPercentage}%
+                        </span>
+                      ) : null}
                     </span>
                     <span>${item.lineTotal.toFixed(2)}</span>
                   </div>

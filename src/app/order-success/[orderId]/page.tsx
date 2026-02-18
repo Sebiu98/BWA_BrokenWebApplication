@@ -5,7 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import MaxWidthWrapper from "../../components/MaxWidthWrapper";
-import { products } from "../../../data/products";
+import {
+  getApiOrderById,
+  getApiProducts,
+  type ApiOrder,
+  type CatalogProduct,
+} from "../../../lib/api";
+import { useAuth } from "../../../hooks/useAuth";
 import { type OrderSummary, readLastOrder } from "../../../lib/order-storage";
 
 //Pagina conferma ordine con chiavi mock.
@@ -14,7 +20,10 @@ const OrderSuccessPage = () => {
   const params = useParams();
   const orderId = params?.orderId ? String(params.orderId) : "";
   //Stato locale per ordine.
+  const { session } = useAuth();
   const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [apiOrder, setApiOrder] = useState<ApiOrder | null>(null);
+  const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   //TODO:vulnerabilita:IDOR su orderId se non si verifica il proprietario.
@@ -22,16 +31,38 @@ const OrderSuccessPage = () => {
 
   useEffect(() => {
     //Carica ordine dopo il primo render.
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(async () => {
       const storedOrder = readLastOrder();
       setOrder(storedOrder);
-      setIsReady(true);
+      try {
+        const numericOrderId = Number(orderId.replace(/^ord-/, ""));
+        if (
+          session?.token &&
+          Number.isFinite(numericOrderId) &&
+          numericOrderId > 0
+        ) {
+          const fetchedOrder = await getApiOrderById(
+            session.token,
+            numericOrderId,
+          );
+          setApiOrder(fetchedOrder);
+        } else {
+          setApiOrder(null);
+        }
+        const apiProducts = await getApiProducts("", "");
+        setProductsCatalog(apiProducts);
+      } catch {
+        setApiOrder(null);
+        setProductsCatalog([]);
+      } finally {
+        setIsReady(true);
+      }
     }, 0);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [orderId, session?.token]);
 
   const handleCopy = (key: string) => {
     //Copia la key negli appunti.
@@ -51,7 +82,10 @@ const OrderSuccessPage = () => {
     );
   }
 
-  if (!order || order.id !== orderId) {
+  const hasMatchingFallbackOrder = Boolean(order && order.id === orderId);
+  const hasApiOrder = Boolean(apiOrder);
+
+  if (!hasApiOrder && !hasMatchingFallbackOrder) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -74,18 +108,47 @@ const OrderSuccessPage = () => {
     );
   }
 
+  const displayOrderId = apiOrder ? `ord-${apiOrder.id}` : orderId;
+  const displayOrderDate = apiOrder?.created_at
+    ? new Date(apiOrder.created_at).toISOString().slice(0, 10)
+    : (order?.date ?? "-");
+  const displayOrderTotal = apiOrder
+    ? Number(apiOrder.total_amount)
+    : (order?.total ?? 0);
+  const displayOrderEmail = apiOrder?.user?.email || order?.userEmail || "-";
+
   //Costruisce lista dei prodotti acquistati.
   const purchasedItems = [];
-  for (let i = 0; i < order.items.length; i += 1) {
-    const item = order.items[i];
-    const product = products.find((entry) => entry.id === item.productId);
+  const baseItems = apiOrder
+    ? apiOrder.items.map((item) => {
+        return {
+          productId: String(item.product_id),
+          quantity: item.quantity,
+          productName: item.product
+            ? item.product.name
+            : `Product #${item.product_id}`,
+        };
+      })
+    : (order?.items ?? []).map((item) => {
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: "",
+        };
+      });
+
+  for (let i = 0; i < baseItems.length; i += 1) {
+    const item = baseItems[i];
+    const product = productsCatalog.find(
+      (entry) => entry.id === item.productId,
+    );
     if (!product) {
       continue;
     }
-    const key = `BWA-${order.id}-${product.id}`;
+    const key = `BWA-${displayOrderId}-${product.id}`;
     purchasedItems.push({
       productId: product.id,
-      name: product.name,
+      name: item.productName || product.name,
       image: product.image,
       quantity: item.quantity,
       key,
@@ -103,10 +166,10 @@ const OrderSuccessPage = () => {
             Thanks for your purchase
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Order ID: <span className="font-semibold">{order.id}</span>
+            Order ID: <span className="font-semibold">{displayOrderId}</span>
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            Purchase date: {order.date}
+            Purchase date: {displayOrderDate}
           </p>
         </div>
 
@@ -158,15 +221,17 @@ const OrderSuccessPage = () => {
             <div className="mt-4 space-y-2 text-sm text-slate-600">
               <div className="flex items-center justify-between">
                 <span>Total paid</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span>${displayOrderTotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Status</span>
-                <span className="font-semibold text-slate-900">Completed</span>
+                <span className="font-semibold text-slate-900">
+                  {apiOrder ? apiOrder.status : "completed"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Email</span>
-                <span>{order.userEmail}</span>
+                <span>{displayOrderEmail}</span>
               </div>
             </div>
             <Link

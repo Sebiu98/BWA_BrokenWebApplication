@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,7 +10,7 @@ import {
   type CartItem,
   updateCartItem,
 } from "../../lib/cart-storage";
-import { getProductById } from "../../data/products";
+import { getApiProducts, type CatalogProduct } from "../../lib/api";
 
 //Bottone semplice per aggiungere un prodotto al carrello.
 type AddToCartButtonProps = {
@@ -26,6 +26,21 @@ const AddToCartButton = ({
 }: AddToCartButtonProps) => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const apiProducts = await getApiProducts("", "");
+        setProductsCatalog(apiProducts);
+      } catch {
+        setProductsCatalog([]);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
   const cartLines = useMemo(() => {
     const lines: Array<{
       id: string;
@@ -33,12 +48,15 @@ const AddToCartButton = ({
       image: string;
       price: number;
       originalPrice?: number;
+      discountPercentage: number;
       quantity: number;
     }> = [];
 
     for (let i = 0; i < cartItems.length; i += 1) {
       const item = cartItems[i];
-      const product = getProductById(item.productId);
+      const product = productsCatalog.find(
+        (entry) => entry.id === item.productId,
+      );
       if (!product) {
         continue;
       }
@@ -48,11 +66,12 @@ const AddToCartButton = ({
         image: product.image,
         price: product.price,
         originalPrice: product.originalPrice,
+        discountPercentage: product.discountPercentage,
         quantity: item.quantity,
       });
     }
     return lines;
-  }, [cartItems]);
+  }, [cartItems, productsCatalog]);
   const totals = useMemo(() => {
     let items = 0;
     let subtotal = 0;
@@ -125,67 +144,72 @@ const AddToCartButton = ({
                   </div>
                 ) : (
                   cartLines.map((line) => (
-                  <div
-                    key={line.id}
-                    className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4"
-                  >
-                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-white">
-                      <Image
-                        src={line.image}
-                        alt={line.name}
-                        fill
-                        sizes="64px"
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="flex flex-1 flex-col">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {line.name}
-                      </p>
-                      <div className="mt-2 flex items-center gap-3">
-                        <div className="inline-flex items-center rounded-full border border-slate-200 bg-white">
+                    <div
+                      key={line.id}
+                      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-white">
+                        <Image
+                          src={line.image}
+                          alt={line.name}
+                          fill
+                          sizes="64px"
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {line.name}
+                        </p>
+                        {line.discountPercentage > 0 ? (
+                          <p className="mt-1 text-xs font-semibold text-emerald-700">
+                            -{line.discountPercentage}%
+                          </p>
+                        ) : null}
+                        <div className="mt-2 flex items-center gap-3">
+                          <div className="inline-flex items-center rounded-full border border-slate-200 bg-white">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleQuantityChange(line.id, line.quantity - 1)
+                              }
+                              className="h-7 w-7 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              -
+                            </button>
+                            <span className="px-2 text-xs font-semibold text-slate-700">
+                              {line.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleQuantityChange(line.id, line.quantity + 1)
+                              }
+                              className="h-7 w-7 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            >
+                              +
+                            </button>
+                          </div>
                           <button
                             type="button"
-                            onClick={() =>
-                              handleQuantityChange(line.id, line.quantity - 1)
-                            }
-                            className="h-7 w-7 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                            onClick={() => handleQuantityChange(line.id, 0)}
+                            className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
                           >
-                            -
-                          </button>
-                          <span className="px-2 text-xs font-semibold text-slate-700">
-                            {line.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleQuantityChange(line.id, line.quantity + 1)
-                            }
-                            className="h-7 w-7 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                          >
-                            +
+                            Remove
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleQuantityChange(line.id, 0)}
-                          className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
-                        >
-                          Remove
-                        </button>
+                      </div>
+                      <div className="text-right">
+                        {line.originalPrice ? (
+                          <p className="text-xs text-slate-400 line-through">
+                            ${line.originalPrice.toFixed(2)}
+                          </p>
+                        ) : null}
+                        <p className="text-sm font-semibold text-slate-900">
+                          ${(line.price * line.quantity).toFixed(2)}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {line.originalPrice ? (
-                        <p className="text-xs text-slate-400 line-through">
-                          ${line.originalPrice.toFixed(2)}
-                        </p>
-                      ) : null}
-                      <p className="text-sm font-semibold text-slate-900">
-                        ${(line.price * line.quantity).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
                   ))
                 )}
               </div>
