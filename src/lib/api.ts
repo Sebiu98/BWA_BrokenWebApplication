@@ -15,6 +15,13 @@ export class ApiRequestError extends Error {
   }
 }
 
+const buildApiNetworkError = (): ApiRequestError => {
+  return new ApiRequestError(
+    `Unable to reach backend API at ${API_BASE_URL}. Make sure Laravel server is running.`,
+    0,
+  );
+};
+
 export type ApiCategory = {
   id: number;
   name: string;
@@ -86,14 +93,20 @@ const buildApiRequestError = async (
 };
 
 const fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    cache: "no-store",
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      cache: "no-store",
+      ...init,
+      headers: {
+        Accept: "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw buildApiNetworkError();
+  }
 
   if (!response.ok) {
     throw await buildApiRequestError(response);
@@ -154,9 +167,15 @@ export const getApiProducts = async (
 export const getApiProductById = async (
   id: string,
 ): Promise<CatalogProduct | null> => {
-  const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/products/${id}`, {
+      cache: "no-store",
+    });
+  } catch {
+    throw buildApiNetworkError();
+  }
 
   if (response.status === 404) {
     return null;

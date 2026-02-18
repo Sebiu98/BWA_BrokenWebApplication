@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
+import OrderDetailsModal from "../components/OrderDetailsModal";
 import {
   getApiAdminOrders,
   getApiAdminProducts,
@@ -18,6 +19,7 @@ const AdminPage = () => {
   const [productsCount, setProductsCount] = useState(0);
   const [usersCount, setUsersCount] = useState(0);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   const [isProductsReady, setIsProductsReady] = useState(false);
 
   //TODO:vulnerabilita:accesso admin senza controlli server-side.
@@ -157,16 +159,25 @@ const AdminPage = () => {
           <span>Order ord-{order.id}</span>
           <span>{order.status}</span>
         </div>
-        <p className="text-sm text-slate-600">{order.user?.email ?? "-"}</p>
+        <div className="flex items-center justify-between text-sm text-slate-600">
+          <span>{order.user?.email ?? "-"}</span>
+          <span className="font-semibold text-slate-900">
+            ${Number(order.total_amount).toFixed(2)}
+          </span>
+        </div>
         <div className="flex items-center justify-between text-sm text-slate-600">
           <span>
             {order.created_at
               ? new Date(order.created_at).toLocaleDateString()
               : "-"}
           </span>
-          <span className="font-semibold text-slate-900">
-            ${Number(order.total_amount).toFixed(2)}
-          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedOrder(order)}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            View details
+          </button>
         </div>
       </div>,
     );
@@ -218,6 +229,11 @@ const AdminPage = () => {
           </div>
         </section>
       </MaxWidthWrapper>
+      <OrderDetailsModal
+        isOpen={Boolean(selectedOrder)}
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </main>
   );
 };

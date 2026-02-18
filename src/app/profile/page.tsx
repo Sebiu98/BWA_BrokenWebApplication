@@ -3,44 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
+import OrderDetailsModal from "../components/OrderDetailsModal";
 import { useAuth } from "../../hooks/useAuth";
 import {
   getApiMyOrders,
-  getApiProducts,
   meApiAuth,
   type ApiAuthUser,
   type ApiOrder,
-  type CatalogProduct,
 } from "../../lib/api";
 import { useEffect, useState } from "react";
 
 const ProfilePage = () => {
   //Legge utente dalla sessione.
   const { user, session, isReady } = useAuth();
-  const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
   const [profileDetails, setProfileDetails] = useState<ApiAuthUser | null>(
     null,
   );
   const [purchaseHistory, setPurchaseHistory] = useState<ApiOrder[]>([]);
-  const [isProductsReady, setIsProductsReady] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   const [isProfileReady, setIsProfileReady] = useState(false);
   const [isOrdersReady, setIsOrdersReady] = useState(false);
   //TODO:vulnerabilita:IDOR se si permette di cambiare userId senza controlli server-side.
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const apiProducts = await getApiProducts("", "");
-        setProductsCatalog(apiProducts);
-      } catch {
-        setProductsCatalog([]);
-      } finally {
-        setIsProductsReady(true);
-      }
-    };
-
-    loadProducts();
-  }, []);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -85,7 +68,7 @@ const ProfilePage = () => {
   }, [session?.token]);
 
   //Se la sessione non e pronta, mostra un testo semplice.
-  if (!isReady || !isProductsReady || !isProfileReady || !isOrdersReady) {
+  if (!isReady || !isProfileReady || !isOrdersReady) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="px-6 py-16 lg:px-0">
@@ -126,76 +109,87 @@ const ProfilePage = () => {
     ? new Date(profileDetails.created_at).toLocaleDateString()
     : "-";
 
-  //Calcola il risparmio totale e prepara le card dei giochi.
+  const normalizeStatus = (status: string): "pending" | "completed" | "cancelled" => {
+    if (status === "completed" || status === "cancelled") {
+      return status;
+    }
+    return "pending";
+  };
+
   let totalSaved = 0;
+  for (let i = 0; i < purchaseHistory.length; i += 1) {
+    const order = purchaseHistory[i];
+    const normalizedStatus = normalizeStatus(order.status);
+    if (normalizedStatus === "cancelled") {
+      continue;
+    }
+
+    for (let j = 0; j < order.items.length; j += 1) {
+      const item = order.items[j];
+      const originalUnitPrice = Number(item.product?.price ?? item.unit_price);
+      const paidUnitPrice = Number(item.unit_price);
+      const savedPerUnit =
+        originalUnitPrice > paidUnitPrice ? originalUnitPrice - paidUnitPrice : 0;
+      totalSaved += savedPerUnit * item.quantity;
+    }
+  }
+
+  //Prepara le card per ordine completo.
   const purchaseCards = [];
   for (let i = 0; i < purchaseHistory.length; i += 1) {
     const order = purchaseHistory[i];
+    const normalizedStatus = normalizeStatus(order.status);
+    const orderDate = order.created_at
+      ? new Date(order.created_at).toLocaleDateString()
+      : "-";
+    const orderTotal = Number(order.total_amount);
+    let totalItems = 0;
     for (let j = 0; j < order.items.length; j += 1) {
-      const item = order.items[j];
-      const itemUnitPrice = Number(item.unit_price);
-      let itemName = item.product
-        ? item.product.name
-        : `Product #${item.product_id}`;
-      let itemImage = "/BWA_logo.png";
-      let originalPrice = item.product?.price ? Number(item.product.price) : 0;
-
-      for (let k = 0; k < productsCatalog.length; k += 1) {
-        const product = productsCatalog[k];
-        if (product.id === String(item.product_id)) {
-          itemName = product.name;
-          itemImage = product.image;
-          if (product.originalPrice && originalPrice <= 0) {
-            originalPrice = product.originalPrice;
-          }
-          break;
-        }
-      }
-
-      const itemSavedPerUnit =
-        originalPrice > itemUnitPrice ? originalPrice - itemUnitPrice : 0;
-      const itemSavedTotal = itemSavedPerUnit * item.quantity;
-      totalSaved += itemSavedTotal;
-
-      purchaseCards.push(
-        <div
-          key={`${order.id}-${item.id}`}
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-50 sm:h-24 sm:w-24">
-              <Image
-                src={itemImage}
-                alt={itemName}
-                width={64}
-                height={64}
-                className="h-full w-full object-contain"
-              />
-            </div>
-            <div className="flex-1 pr-24">
-              <h3 className="text-base font-semibold text-slate-900">
-                {itemName}
-              </h3>
-            </div>
-            <div className="absolute right-0 top-0 text-right">
-              <span className="text-sm font-semibold text-emerald-700">
-                {order.status}
-              </span>
-            </div>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 text-right">
-              <p className="text-sm text-slate-600">
-                ${(itemUnitPrice * item.quantity).toFixed(2)}
-              </p>
-              {itemSavedTotal > 0 ? (
-                <p className="text-xs font-semibold text-emerald-700">
-                  Saved ${itemSavedTotal.toFixed(2)}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </div>,
-      );
+      totalItems += order.items[j].quantity;
     }
+
+    const statusClassName =
+      normalizedStatus === "completed"
+        ? "bg-emerald-100 text-emerald-700"
+        : normalizedStatus === "cancelled"
+          ? "bg-red-100 text-red-700"
+          : "bg-amber-100 text-amber-700";
+
+    purchaseCards.push(
+      <div
+        key={order.id}
+        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-slate-900">
+            Order ord-{order.id}
+          </h3>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusClassName}`}
+          >
+            {normalizedStatus}
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-1 text-sm text-slate-600">
+            <p>Date: {orderDate}</p>
+            <p>Items: {totalItems}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-slate-900">
+              Total: ${orderTotal.toFixed(2)}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelectedOrder(order)}
+              className="mt-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              View details
+            </button>
+          </div>
+        </div>
+      </div>,
+    );
   }
 
   return (
@@ -247,6 +241,11 @@ const ProfilePage = () => {
           )}
         </section>
       </MaxWidthWrapper>
+      <OrderDetailsModal
+        isOpen={Boolean(selectedOrder)}
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </main>
   );
 };

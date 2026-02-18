@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWidthWrapper from "../../components/MaxWidthWrapper";
+import OrderDetailsModal from "../../components/OrderDetailsModal";
 import { useAuth } from "../../../hooks/useAuth";
 import {
   ApiRequestError,
@@ -21,6 +22,7 @@ const AdminOrdersPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
 
   //TODO:vulnerabilita:IDOR sugli ordini senza controlli server-side.
   //TODO:vulnerabilita:accesso admin solo lato client.
@@ -174,6 +176,13 @@ const AdminOrdersPage = () => {
           >
             Cancelled
           </button>
+          <button
+            type="button"
+            onClick={() => setSelectedOrder(order)}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            View details
+          </button>
         </div>
       </div>,
     );
@@ -237,6 +246,11 @@ const AdminOrdersPage = () => {
           </div>
         )}
       </MaxWidthWrapper>
+      <OrderDetailsModal
+        isOpen={Boolean(selectedOrder)}
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </main>
   );
 };

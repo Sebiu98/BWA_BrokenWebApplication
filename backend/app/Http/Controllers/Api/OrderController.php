@@ -87,7 +87,7 @@ class OrderController extends Controller
             $createdOrder = Order::query()->create([
                 'user_id' => $authUser->id,
                 'total_amount' => round($totalAmount, 2),
-                'status' => 'completed',
+                'status' => 'pending',
             ]);
 
             $createdOrder->items()->createMany($orderItemsPayload);

@@ -43,9 +43,23 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   const searchLower = searchText ? searchText.toLowerCase() : "";
 
   //Legge categorie e prodotti dal backend Laravel.
-  //TODO:in futuro aggiungere fallback robusto se l'API non risponde.
-  const categoriesData = await getApiCategories();
-  const filteredProducts = await getApiProducts(searchText, categoryText);
+  let categoriesData: Array<{ name: string }> = [];
+  let filteredProducts: Awaited<ReturnType<typeof getApiProducts>> = [];
+  let apiErrorMessage = "";
+
+  try {
+    const [loadedCategories, loadedProducts] = await Promise.all([
+      getApiCategories(),
+      getApiProducts(searchText, categoryText),
+    ]);
+    categoriesData = loadedCategories;
+    filteredProducts = loadedProducts;
+  } catch (error) {
+    apiErrorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unable to load products from backend API.";
+  }
 
   const categories: string[] = [];
   for (let i = 0; i < categoriesData.length; i += 1) {
@@ -95,13 +109,6 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
           <span className="uppercase tracking-[0.2em]">{product.category}</span>
           <span>{product.platform}</span>
         </div>
-        {product.discountPercentage > 0 ? (
-          <div className="mt-2">
-            <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-              -{product.discountPercentage}%
-            </span>
-          </div>
-        ) : null}
         <div className="mt-4 flex h-36 items-center justify-center rounded-xl bg-slate-50">
           <Image
             src={product.image}
@@ -117,14 +124,27 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
         <p className="mt-2 text-sm text-slate-600">{product.description}</p>
         <div className="mt-4 flex items-center justify-between">
           <div>
-            {product.originalPrice ? (
-              <p className="text-xs text-slate-400 line-through">
-                ${product.originalPrice.toFixed(2)}
-              </p>
-            ) : null}
-            <p className="text-lg font-semibold text-slate-900">
-              ${product.price.toFixed(2)}
+            <p
+              className={`text-xs line-through ${
+                product.originalPrice ? "text-slate-400" : "invisible"
+              }`}
+              aria-hidden={!product.originalPrice}
+            >
+              $
+              {product.originalPrice
+                ? product.originalPrice.toFixed(2)
+                : "00.00"}
             </p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <p className="text-lg font-semibold text-slate-900">
+                ${product.price.toFixed(2)}
+              </p>
+              {product.discountPercentage > 0 ? (
+                <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                  -{product.discountPercentage}%
+                </span>
+              ) : null}
+            </div>
           </div>
           <div className="text-sm text-slate-600">
             {searchLower ? "Filtered" : `${product.rating.toFixed(1)} / 5`}
@@ -191,6 +211,12 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
               </label>
             </form>
           </div>
+
+          {apiErrorMessage ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              {apiErrorMessage}
+            </div>
+          ) : null}
 
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {productCards}

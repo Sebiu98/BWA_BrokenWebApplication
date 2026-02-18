@@ -226,7 +226,7 @@ const OrderSuccessPage = () => {
               <div className="flex items-center justify-between">
                 <span>Status</span>
                 <span className="font-semibold text-slate-900">
-                  {apiOrder ? apiOrder.status : "completed"}
+                  {apiOrder ? apiOrder.status : "pending"}
                 </span>
               </div>
               <div className="flex items-center justify-between">

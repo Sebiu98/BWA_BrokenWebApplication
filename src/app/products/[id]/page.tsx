@@ -15,7 +15,32 @@ type ProductPageProps = {
 const ProductPage = async ({ params }: ProductPageProps) => {
   //Legge l'id dalla route.
   const { id } = await params;
-  const product = await getApiProductById(String(id));
+  let product: Awaited<ReturnType<typeof getApiProductById>> = null;
+  let apiErrorMessage = "";
+
+  try {
+    product = await getApiProductById(String(id));
+  } catch (error) {
+    apiErrorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unable to load product from backend API.";
+  }
+
+  if (apiErrorMessage) {
+    return (
+      <main className="bg-slate-50">
+        <MaxWidthWrapper className="pb-16 pt-4 sm:pb-32 lg:gap-x-0 xl:gap-x-8 lg:pt-10 xl:pt-5 lg:pb-26 relative overflow-hidden">
+          <Link href="/products" className="text-sm font-semibold text-slate-600">
+            Back to catalog
+          </Link>
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+            {apiErrorMessage}
+          </div>
+        </MaxWidthWrapper>
+      </main>
+    );
+  }
 
   //Se non esiste, mostra 404.
   if (!product) {
@@ -23,17 +48,21 @@ const ProductPage = async ({ params }: ProductPageProps) => {
   }
 
   //Prodotti correlati semplici da backend.
-  const allProducts = await getApiProducts("", "");
   const relatedProducts = [];
-  for (let i = 0; i < allProducts.length; i += 1) {
-    const item = allProducts[i];
-    if (item.id === product.id) {
-      continue;
+  try {
+    const allProducts = await getApiProducts("", "");
+    for (let i = 0; i < allProducts.length; i += 1) {
+      const item = allProducts[i];
+      if (item.id === product.id) {
+        continue;
+      }
+      relatedProducts.push(item);
+      if (relatedProducts.length === 3) {
+        break;
+      }
     }
-    relatedProducts.push(item);
-    if (relatedProducts.length === 3) {
-      break;
-    }
+  } catch {
+    //Se i correlati non si caricano, lasciamo solo la pagina prodotto.
   }
 
   //Card prodotti correlati.

@@ -12,8 +12,23 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/up');
 
         $response->assertStatus(200);
+    }
+
+    public function test_health_endpoint_returns_expected_payload(): void
+    {
+        $response = $this->getJson('/api/health');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonStructure([
+                'status',
+                'service',
+                'env',
+                'time',
+            ]);
     }
 }
