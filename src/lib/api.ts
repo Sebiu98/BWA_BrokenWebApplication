@@ -1,3 +1,4 @@
+// Base URL backend: in locale prende NEXT_PUBLIC_API_BASE_URL, altrimenti fallback.
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api";
 
@@ -15,6 +16,7 @@ export class ApiRequestError extends Error {
   }
 }
 
+// Errore standard quando il backend non risponde (server Laravel spento o URL errato).
 const buildApiNetworkError = (): ApiRequestError => {
   return new ApiRequestError(
     `Unable to reach backend API at ${API_BASE_URL}. Make sure Laravel server is running.`,
@@ -71,6 +73,7 @@ export type ApiAdminProduct = {
 const buildApiRequestError = async (
   response: Response,
 ): Promise<ApiRequestError> => {
+  // Se l'API ritorna JSON con message/errors, lo leggiamo per mostrare un errore utile in UI.
   let message = `API request failed: ${response.status} ${response.statusText}`;
   let errors: ApiValidationErrors | undefined;
 
@@ -93,6 +96,7 @@ const buildApiRequestError = async (
 };
 
 const fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  // Funzione unica per tutte le chiamate: cosi gestiamo header/errori sempre uguale.
   let response: Response;
 
   try {
@@ -112,10 +116,12 @@ const fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw await buildApiRequestError(response);
   }
 
+  // Cast semplice: ogni endpoint specifica poi il suo tipo nel return.
   return response.json() as Promise<T>;
 };
 
 const mapApiProductToCatalogProduct = (item: ApiProduct): CatalogProduct => {
+  // Convertiamo il prodotto "raw" API nel formato usato dai componenti frontend.
   const basePrice = Number(item.price);
   const discountPercentage = Math.max(
     0,
@@ -313,6 +319,7 @@ export type AdminUpdateUserPayload = {
 export const registerApiAuth = async (
   payload: RegisterPayload,
 ): Promise<ApiAuthResponse> => {
+  // Register utente + ritorno token JWT.
   return fetchJson<ApiAuthResponse>("/auth/register", {
     method: "POST",
     headers: {
@@ -325,6 +332,7 @@ export const registerApiAuth = async (
 export const loginApiAuth = async (
   payload: LoginPayload,
 ): Promise<ApiAuthResponse> => {
+  // Login utente + ritorno token JWT.
   return fetchJson<ApiAuthResponse>("/auth/login", {
     method: "POST",
     headers: {
@@ -335,6 +343,7 @@ export const loginApiAuth = async (
 };
 
 export const meApiAuth = async (token: string): Promise<ApiAuthUser> => {
+  // Profilo utente della sessione corrente (serve per "validare" il token lato client).
   return fetchJson<ApiAuthUser>("/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -524,6 +533,7 @@ export const createApiOrder = async (
   token: string,
   payload: CreateOrderPayload,
 ): Promise<{ message: string; order: ApiOrder }> => {
+  // Checkout: crea ordine con righe item + dati payment (validati lato backend).
   return fetchJson<{ message: string; order: ApiOrder }>("/orders", {
     method: "POST",
     headers: {

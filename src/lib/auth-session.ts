@@ -50,7 +50,7 @@ export function writeSession(session: AuthSession) {
     return;
   }
 
-  //TODO:sostituire con JWT reale firmato dal backend e salvarlo in cookie httpOnly.
+  //Qui salviamo token + dati utente in localStorage per mantenere la sessione.
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 

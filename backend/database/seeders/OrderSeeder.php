@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\GameKey;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -9,6 +10,32 @@ use Illuminate\Database\Seeder;
 
 class OrderSeeder extends Seeder
 {
+    private function attachUsedKeysToOrderItems(iterable $orderItems): void
+    {
+        foreach ($orderItems as $item) {
+            $needed = (int) $item->quantity;
+
+            $keys = GameKey::query()
+                ->where('product_id', $item->product_id)
+                ->where('status', 'available')
+                ->orderBy('id')
+                ->limit($needed)
+                ->get();
+
+            if ($keys->count() < $needed) {
+                continue;
+            }
+
+            foreach ($keys as $key) {
+                $key->order_item_id = $item->id;
+                $key->status = 'used';
+                $key->assigned_at = now();
+                $key->used_at = now();
+                $key->save();
+            }
+        }
+    }
+
     /**
      * Run the database seeds.
      */
@@ -39,7 +66,7 @@ class OrderSeeder extends Seeder
             'status' => 'completed',
         ]);
 
-        $orderUserOne->items()->createMany([
+        $orderUserOneItems = $orderUserOne->items()->createMany([
             [
                 'product_id' => $productRpg->id,
                 'quantity' => 1,
@@ -51,6 +78,7 @@ class OrderSeeder extends Seeder
                 'unit_price' => 9.99,
             ],
         ]);
+        $this->attachUsedKeysToOrderItems($orderUserOneItems);
 
         $orderUserTwo = Order::query()->create([
             'user_id' => $user->id,
@@ -58,13 +86,14 @@ class OrderSeeder extends Seeder
             'status' => 'completed',
         ]);
 
-        $orderUserTwo->items()->createMany([
+        $orderUserTwoItems = $orderUserTwo->items()->createMany([
             [
                 'product_id' => $productMmo->id,
                 'quantity' => 1,
                 'unit_price' => 14.99,
             ],
         ]);
+        $this->attachUsedKeysToOrderItems($orderUserTwoItems);
 
         $orderAdmin = Order::query()->create([
             'user_id' => $admin->id,
@@ -72,12 +101,13 @@ class OrderSeeder extends Seeder
             'status' => 'completed',
         ]);
 
-        $orderAdmin->items()->createMany([
+        $orderAdminItems = $orderAdmin->items()->createMany([
             [
                 'product_id' => $productAction->id,
                 'quantity' => 2,
                 'unit_price' => 9.99,
             ],
         ]);
+        $this->attachUsedKeysToOrderItems($orderAdminItems);
     }
 }

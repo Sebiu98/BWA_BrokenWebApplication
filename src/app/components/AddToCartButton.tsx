@@ -85,7 +85,7 @@ const AddToCartButton = ({
   }, [cartLines]);
 
   const handleClick = () => {
-    //TODO:in futuro chiamare un endpoint backend per salvare il carrello.
+    //Per ora il carrello e locale: aggiungiamo item e apriamo il pannello.
     addCartItem(productId, 1);
     setCartItems(readCart());
     setIsPanelOpen(true);

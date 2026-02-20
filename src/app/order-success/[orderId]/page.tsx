@@ -151,6 +151,16 @@ const OrderSuccessPage = () => {
     : "-";
   const displayOrderTotal = Number(apiOrder.total_amount);
   const displayOrderEmail = apiOrder.user?.email || "-";
+  const normalizedOrderStatus =
+    apiOrder.status === "completed" || apiOrder.status === "cancelled"
+      ? apiOrder.status
+      : "pending";
+  const statusClassName =
+    normalizedOrderStatus === "completed"
+      ? "bg-emerald-100 text-emerald-700"
+      : normalizedOrderStatus === "cancelled"
+        ? "bg-red-100 text-red-700"
+        : "bg-amber-100 text-amber-700";
 
   //Costruisce lista dei prodotti acquistati da API ordine con chiavi reali.
   const purchasedItems = apiOrder.items.map((item) => {
@@ -171,13 +181,26 @@ const OrderSuccessPage = () => {
     <main className="bg-slate-50">
       <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:pt-10 xl:pt-5 lg:pb-56">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Order confirmed</p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-900 md:text-4xl">
-            Thanks for your purchase
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Order ID: <span className="font-semibold">{displayOrderId}</span>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            Order details
           </p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900 md:text-4xl">
+            {normalizedOrderStatus === "completed"
+              ? "Thanks for your purchase"
+              : normalizedOrderStatus === "cancelled"
+                ? "Order cancelled"
+                : "Order received"}
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <p>
+              Order ID: <span className="font-semibold">{displayOrderId}</span>
+            </p>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusClassName}`}
+            >
+              {normalizedOrderStatus}
+            </span>
+          </div>
           <p className="mt-1 text-sm text-slate-600">Purchase date: {displayOrderDate}</p>
         </div>
 
@@ -247,7 +270,9 @@ const OrderSuccessPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span>Status</span>
-                <span className="font-semibold text-slate-900">{apiOrder.status}</span>
+                <span className="font-semibold text-slate-900">
+                  {normalizedOrderStatus}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Email</span>

@@ -17,7 +17,7 @@ import { buttonVariants } from "./ui/button";
 import { useAuth } from "../../hooks/useAuth";
 import { readCart } from "../../lib/cart-storage";
 
-//Navbar principale con stato auth demo.
+//Navbar principale: legge auth dal custom hook e carrello da localStorage.
 const Navbar = () => {
   //Dati utente dalla sessione.
   const { user, isAdmin, logout } = useAuth();

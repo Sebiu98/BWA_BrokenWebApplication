@@ -14,7 +14,7 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
   const router = useRouter();
   //Legge il parametro next per redirect semplice.
   const searchParams = useSearchParams();
-  //Hook auth demo.
+  //Hook auth: chiama API login/register e salva token sessione.
   const { login, register } = useAuth();
   //Stato locale degli input.
   const [username, setUsername] = useState("");

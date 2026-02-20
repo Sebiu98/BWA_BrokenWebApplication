@@ -160,7 +160,7 @@ const AdminOrdersPage = () => {
             disabled={!isPending || isUpdatingCurrentOrder}
             className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
           >
-            Completed
+            Confirm
           </button>
           <button
             type="button"
@@ -168,7 +168,7 @@ const AdminOrdersPage = () => {
             disabled={!isPending || isUpdatingCurrentOrder}
             className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
           >
-            Cancelled
+            Cancel order
           </button>
           <button
             type="button"

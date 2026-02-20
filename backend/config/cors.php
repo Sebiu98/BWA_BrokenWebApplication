@@ -1,5 +1,5 @@
 <?php
-
+// Leggiamo origini da .env (anche multiple separate da virgola).
 $origins = env('CORS_ALLOWED_ORIGINS', env('FRONTEND_URL', 'http://localhost:3000'));
 $allowedOrigins = [];
 $originsList = explode(',', (string) $origins);
@@ -12,7 +12,7 @@ foreach ($originsList as $origin) {
 }
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => $allowedOrigins,
     'allowed_origins_patterns' => [],
