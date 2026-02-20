@@ -26,4 +26,9 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function gameKeys()
+    {
+        return $this->hasMany(GameKey::class);
+    }
 }

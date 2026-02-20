@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             UserSeeder::class,
+            GameKeySeeder::class,
             OrderSeeder::class,
             CommentSeeder::class,
         ]);

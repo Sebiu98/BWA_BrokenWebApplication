@@ -152,17 +152,18 @@ const OrderSuccessPage = () => {
   const displayOrderTotal = Number(apiOrder.total_amount);
   const displayOrderEmail = apiOrder.user?.email || "-";
 
-  //Costruisce lista dei prodotti acquistati da API ordine.
+  //Costruisce lista dei prodotti acquistati da API ordine con chiavi reali.
   const purchasedItems = apiOrder.items.map((item) => {
-    const productName = item.product ? item.product.name : `Product #${item.product_id}`;
-    const key = `BWA-${displayOrderId}-${item.product_id}`;
+    const productName = item.product
+      ? item.product.name
+      : `Product #${item.product_id}`;
 
     return {
       id: item.id,
       name: productName,
       image: "/BWA_logo.png",
       quantity: item.quantity,
-      key,
+      keys: item.game_keys ?? [],
     };
   });
 
@@ -183,6 +184,9 @@ const OrderSuccessPage = () => {
         <div className="mt-8 grid gap-8 lg:grid-cols-[2fr,1fr]">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-slate-900">Your keys</h2>
+            <p className="text-sm text-slate-600">
+              Keys are valid for 30 days from order confirmation.
+            </p>
             {purchasedItems.map((item) => {
               return (
                 <div
@@ -201,18 +205,33 @@ const OrderSuccessPage = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-slate-900">{item.name}</h3>
                     <p className="mt-1 text-sm text-slate-600">Quantity: {item.quantity}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                      <span className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900">
-                        {item.key}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(item.key)}
-                        className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Copy key
-                      </button>
-                    </div>
+                    {item.keys.length === 0 ? (
+                      <p className="mt-3 text-sm text-slate-500">
+                        No keys assigned yet for this item.
+                      </p>
+                    ) : (
+                      <div className="mt-3 space-y-2">
+                        {item.keys.map((keyItem) => {
+                          return (
+                            <div
+                              key={keyItem.id}
+                              className="flex flex-wrap items-center gap-2"
+                            >
+                              <span className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900">
+                                {keyItem.key_value}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(keyItem.key_value)}
+                                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                Copy key
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -235,6 +254,9 @@ const OrderSuccessPage = () => {
                 <span>{displayOrderEmail}</span>
               </div>
             </div>
+            <p className="mt-4 text-xs text-slate-500">
+              Key validity: 30 days from order confirmation.
+            </p>
             <Link
               href="/products"
               className="mt-6 flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"

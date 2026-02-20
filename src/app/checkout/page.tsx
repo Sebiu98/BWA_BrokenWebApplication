@@ -12,11 +12,27 @@ import {
 import { type CartItem, clearCart, readCart } from "../../lib/cart-storage";
 import { useAuth } from "../../hooks/useAuth";
 
+const onlyDigits = (value: string): string => value.replace(/\D/g, "");
+
+const formatCardNumber = (value: string): string => {
+  const digits = onlyDigits(value).slice(0, 19);
+  const groups = digits.match(/.{1,4}/g);
+  return groups ? groups.join(" ") : "";
+};
+
+const formatExpiration = (value: string): string => {
+  const digits = onlyDigits(value).slice(0, 4);
+  if (digits.length <= 2) {
+    return digits;
+  }
+  return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+};
+
 //Pagina checkout con login obbligatorio.
 const CheckoutPage = () => {
   //Router per simulare il redirect post ordine.
   const router = useRouter();
-  //Dati utente dalla sessione demo.
+  //Dati utente dalla sessione auth.
   const { user, session, isAuthenticated, isReady: isAuthReady } = useAuth();
   //Stato locale carrello.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -24,6 +40,10 @@ const CheckoutPage = () => {
   const [isCartReady, setIsCartReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiration, setExpiration] = useState("");
+  const [cvc, setCvc] = useState("");
 
   useEffect(() => {
     //Carica il carrello dopo il primo render.
@@ -91,6 +111,44 @@ const CheckoutPage = () => {
       return;
     }
 
+    const trimmedFullName = fullName.trim();
+    if (trimmedFullName.length < 2 || trimmedFullName.length > 80) {
+      setErrorMessage("Full name must be between 2 and 80 characters.");
+      return;
+    }
+
+    const cardDigits = onlyDigits(cardNumber);
+    if (cardDigits.length < 13 || cardDigits.length > 19) {
+      setErrorMessage("Card number must contain between 13 and 19 digits.");
+      return;
+    }
+
+    const expirationDigits = onlyDigits(expiration);
+    if (expirationDigits.length !== 4) {
+      setErrorMessage("Expiration must be in MM / YY format.");
+      return;
+    }
+
+    const month = Number(expirationDigits.slice(0, 2));
+    const year = 2000 + Number(expirationDigits.slice(2));
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      setErrorMessage("Expiration month must be between 01 and 12.");
+      return;
+    }
+
+    const now = new Date();
+    const expirationEnd = new Date(year, month, 0, 23, 59, 59, 999);
+    if (expirationEnd < now) {
+      setErrorMessage("Card is expired.");
+      return;
+    }
+
+    const cvcDigits = onlyDigits(cvc);
+    if (cvcDigits.length < 3 || cvcDigits.length > 4) {
+      setErrorMessage("CVC must contain 3 or 4 digits.");
+      return;
+    }
+
     const payloadItems = cartItems
       .map((item) => {
         const productId = Number(item.productId);
@@ -112,6 +170,12 @@ const CheckoutPage = () => {
       setIsSubmitting(true);
       const response = await createApiOrder(session.token, {
         items: payloadItems,
+        payment: {
+          full_name: trimmedFullName,
+          card_number: cardDigits,
+          expiration: `${expirationDigits.slice(0, 2)}/${expirationDigits.slice(2)}`,
+          cvc: cvcDigits,
+        },
       });
 
       const createdOrder = response.order;
@@ -209,6 +273,9 @@ const CheckoutPage = () => {
           <p className="text-sm text-slate-600">
             You are signed in as {user?.email}.
           </p>
+          <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Keys are valid for 30 days from order confirmation.
+          </div>
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[2fr,1fr]">
@@ -227,6 +294,11 @@ const CheckoutPage = () => {
                   type="text"
                   required
                   placeholder="Jordan Smith"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  minLength={2}
+                  maxLength={80}
+                  autoComplete="cc-name"
                   className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 />
               </label>
@@ -238,8 +310,12 @@ const CheckoutPage = () => {
                   required
                   placeholder="4242 4242 4242 4242"
                   inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={19}
+                  value={cardNumber}
+                  onChange={(event) =>
+                    setCardNumber(formatCardNumber(event.target.value))
+                  }
+                  maxLength={23}
+                  autoComplete="cc-number"
                   className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                 />
               </label>
@@ -250,7 +326,14 @@ const CheckoutPage = () => {
                   <input
                     type="text"
                     required
-                    placeholder="12 / 28"
+                    placeholder="MM / YY"
+                    inputMode="numeric"
+                    value={expiration}
+                    onChange={(event) =>
+                      setExpiration(formatExpiration(event.target.value))
+                    }
+                    maxLength={7}
+                    autoComplete="cc-exp"
                     className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   />
                 </label>
@@ -261,8 +344,13 @@ const CheckoutPage = () => {
                     required
                     placeholder="123"
                     inputMode="numeric"
-                    pattern="[0-9]*"
+                    value={cvc}
+                    onChange={(event) =>
+                      setCvc(onlyDigits(event.target.value).slice(0, 4))
+                    }
+                    minLength={3}
                     maxLength={4}
+                    autoComplete="cc-csc"
                     className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                   />
                 </label>
@@ -321,6 +409,9 @@ const CheckoutPage = () => {
                 </div>
               </div>
             </div>
+            <p className="mt-4 text-xs text-slate-500">
+              Note: delivered keys expire after 30 days.
+            </p>
           </aside>
         </div>
       </MaxWidthWrapper>

@@ -1,7 +1,15 @@
 <?php
 
 $origins = env('CORS_ALLOWED_ORIGINS', env('FRONTEND_URL', 'http://localhost:3000'));
-$allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $origins))));
+$allowedOrigins = [];
+$originsList = explode(',', (string) $origins);
+
+foreach ($originsList as $origin) {
+    $cleanOrigin = trim($origin);
+    if ($cleanOrigin !== '') {
+        $allowedOrigins[] = $cleanOrigin;
+    }
+}
 
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],

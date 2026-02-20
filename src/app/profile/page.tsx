@@ -228,9 +228,14 @@ const ProfilePage = () => {
         </section>
 
         <section className="mt-10">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Purchase history
-          </h2>
+          <div className="px-6">
+            <h2 className="text-xl font-semibold text-slate-900">
+              Purchase history
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Keys are valid for 30 days from order confirmation.
+            </p>
+          </div>
 
           {purchaseHistory.length === 0 ? (
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">

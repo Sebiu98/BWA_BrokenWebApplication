@@ -17,6 +17,18 @@ const normalizeStatus = (
   return "pending";
 };
 
+const toKeyStatusClassName = (status: string): string => {
+  if (status === "used") {
+    return "bg-amber-100 text-amber-700";
+  }
+
+  if (status === "assigned") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  return "bg-slate-100 text-slate-700";
+};
+
 const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) => {
   if (!isOpen || !order) {
     return null;
@@ -70,6 +82,9 @@ const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) =
         </div>
 
         <div className="mt-4 space-y-3">
+          <p className="text-xs text-slate-500">
+            Keys remain valid for 30 days from order confirmation.
+          </p>
           {order.items.map((item) => {
             const quantity = item.quantity;
             const paidUnitPrice = Number(item.unit_price);
@@ -83,6 +98,8 @@ const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) =
             const productName = item.product
               ? item.product.name
               : `Product #${item.product_id}`;
+            const gameKeys = item.game_keys ?? [];
+            const missingKeysCount = Math.max(0, quantity - gameKeys.length);
 
             return (
               <div
@@ -114,6 +131,37 @@ const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) =
                       </p>
                     ) : null}
                   </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {gameKeys.map((keyItem) => {
+                    return (
+                      <div
+                        key={keyItem.id}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900">
+                          {keyItem.key_value}
+                        </span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${toKeyStatusClassName(
+                            keyItem.status,
+                          )}`}
+                        >
+                          {keyItem.status}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {Array.from({ length: missingKeysCount }).map((_, index) => {
+                    return (
+                      <p
+                        key={`missing-key-${item.id}-${index}`}
+                        className="text-xs font-semibold text-slate-500"
+                      >
+                        Key is no longer available.
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             );

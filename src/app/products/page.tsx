@@ -5,7 +5,7 @@ import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import SiteFooter from "../components/SiteFooter";
 import { getApiCategories, getApiProducts } from "../../lib/api";
 
-//Pagina catalogo con dati mock.
+//Pagina catalogo con dati letti da API.
 type ProductsPageProps = {
   searchParams?: Promise<{
     search?: string;

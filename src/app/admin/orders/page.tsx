@@ -59,7 +59,7 @@ const AdminOrdersPage = () => {
 
   const handleUpdateStatus = async (
     orderId: number,
-    status: "pending" | "completed" | "cancelled",
+    status: "completed" | "cancelled",
   ) => {
     if (!session?.token) {
       return;
@@ -124,6 +124,8 @@ const AdminOrdersPage = () => {
   const orderCards = [];
   for (let i = 0; i < orders.length; i += 1) {
     const order = orders[i];
+    const isPending = order.status === "pending";
+    const isUpdatingCurrentOrder = isSaving && updatingOrderId === order.id;
     const orderDate = order.created_at
       ? new Date(order.created_at).toLocaleDateString()
       : "-";
@@ -154,16 +156,8 @@ const AdminOrdersPage = () => {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => handleUpdateStatus(order.id, "pending")}
-            disabled={isSaving && updatingOrderId === order.id}
-            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60"
-          >
-            Pending
-          </button>
-          <button
-            type="button"
             onClick={() => handleUpdateStatus(order.id, "completed")}
-            disabled={isSaving && updatingOrderId === order.id}
+            disabled={!isPending || isUpdatingCurrentOrder}
             className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
           >
             Completed
@@ -171,7 +165,7 @@ const AdminOrdersPage = () => {
           <button
             type="button"
             onClick={() => handleUpdateStatus(order.id, "cancelled")}
-            disabled={isSaving && updatingOrderId === order.id}
+            disabled={!isPending || isUpdatingCurrentOrder}
             className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
           >
             Cancelled

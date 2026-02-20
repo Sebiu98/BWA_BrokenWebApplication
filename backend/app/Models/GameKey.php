@@ -7,19 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class GameKey extends Model
 {
     protected $fillable = [
-        'order_id',
+        'product_id',
+        'order_item_id',
         'key_value',
-        'is_used',
+        'status',
         'assigned_at',
+        'used_at',
     ];
 
     protected $casts = [
-        'is_used' => 'boolean',
         'assigned_at' => 'datetime',
+        'used_at' => 'datetime',
     ];
 
-    public function order()
+    public function product()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Product::class);
+    }
+
+    public function orderItem()
+    {
+        return $this->belongsTo(OrderItem::class);
     }
 }

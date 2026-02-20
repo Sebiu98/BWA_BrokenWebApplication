@@ -26,8 +26,13 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function gameKey()
+    public function gameKeys()
     {
-        return $this->hasOne(GameKey::class);
+        return $this->hasManyThrough(
+            GameKey::class,
+            OrderItem::class,
+            'order_id',
+            'order_item_id'
+        );
     }
 }

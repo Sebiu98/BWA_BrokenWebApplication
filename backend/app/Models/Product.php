@@ -35,4 +35,9 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function gameKeys()
+    {
+        return $this->hasMany(GameKey::class);
+    }
 }

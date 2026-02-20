@@ -15,7 +15,8 @@ const HowItWorksPage = () => {
             </h1>
             <p className="max-w-2xl text-sm text-slate-600 md:text-base">
               A simple flow from browsing to key delivery. Your key is delivered
-              instantly after the purchase is confirmed.
+              instantly after the purchase is confirmed. Each key stays valid
+              for 30 days from order confirmation.
             </p>
           </div>
 
@@ -60,7 +61,7 @@ const HowItWorksPage = () => {
               </div>
               <p className="mt-4 text-sm text-slate-600">
                 Sign in to complete the purchase. The key appears on the order
-                confirmation page immediately.
+                confirmation page immediately and remains valid for 30 days.
               </p>
             </div>
           </section>
@@ -88,7 +89,8 @@ const HowItWorksPage = () => {
                   Keys stay visible
                 </p>
                 <p className="mt-2 text-sm text-slate-600">
-                  The order success page keeps the key visible for quick access.
+                  The order success page keeps the key visible for quick access
+                  during the 30-day validity window.
                 </p>
               </div>
               <div className="rounded-xl bg-slate-50 p-4">
@@ -123,6 +125,15 @@ const HowItWorksPage = () => {
                   <p className="mt-2">
                     Right after the purchase is confirmed on the order success
                     page.
+                  </p>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    How long is a key valid?
+                  </p>
+                  <p className="mt-2">
+                    Every delivered key is valid for 30 days from order
+                    confirmation.
                   </p>
                 </div>
                 <div>

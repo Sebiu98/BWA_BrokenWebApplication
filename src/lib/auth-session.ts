@@ -1,4 +1,4 @@
-//Tipi base per la sessione demo.
+//Tipi base per la sessione auth lato client.
 export type UserRole = "user" | "admin";
 
 //Utente salvato nella sessione.
@@ -44,7 +44,7 @@ export function readSession(): AuthSession | null {
   }
 }
 
-//Scrive la sessione demo.
+//Scrive la sessione auth.
 export function writeSession(session: AuthSession) {
   if (typeof window === "undefined") {
     return;
@@ -54,7 +54,7 @@ export function writeSession(session: AuthSession) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 
-//Pulisce la sessione demo.
+//Pulisce la sessione auth.
 export function clearSession() {
   if (typeof window === "undefined") {
     return;

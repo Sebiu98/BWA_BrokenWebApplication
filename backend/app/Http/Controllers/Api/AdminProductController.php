@@ -3,14 +3,50 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GameKey;
 use App\Models\Product;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class AdminProductController extends Controller
 {
+    private function randomKeyValue(): string
+    {
+        $raw = strtoupper(bin2hex(random_bytes(10)));
+
+        return implode('-', [
+            substr($raw, 0, 5),
+            substr($raw, 5, 5),
+            substr($raw, 10, 5),
+            substr($raw, 15, 5),
+        ]);
+    }
+
+    private function createInitialKeys(Product $product, int $count = 10): void
+    {
+        $generated = [];
+
+        for ($i = 0; $i < $count; $i += 1) {
+            do {
+                $candidate = $this->randomKeyValue();
+            } while (
+                isset($generated[$candidate]) ||
+                GameKey::query()->where('key_value', $candidate)->exists()
+            );
+
+            $generated[$candidate] = true;
+
+            GameKey::query()->create([
+                'product_id' => $product->id,
+                'key_value' => $candidate,
+                'status' => 'available',
+            ]);
+        }
+    }
+
     private function ensureAdmin(Request $request): ?JsonResponse
     {
         $authUser = $request->user();
@@ -70,7 +106,12 @@ class AdminProductController extends Controller
             ? (bool) $validated['is_enabled']
             : true;
 
-        $product = Product::query()->create($validated);
+        $product = DB::transaction(function () use ($validated) {
+            $createdProduct = Product::query()->create($validated);
+            $this->createInitialKeys($createdProduct, 10);
+
+            return $createdProduct;
+        });
         $product->load('category');
 
         return response()->json([
@@ -157,8 +198,17 @@ class AdminProductController extends Controller
             ], 404);
         }
 
+        if ($product->orderItems()->exists()) {
+            return response()->json([
+                'message' => 'Product cannot be deleted because it is used by existing orders.',
+            ], 409);
+        }
+
         try {
-            $product->delete();
+            DB::transaction(function () use ($product) {
+                $product->gameKeys()->delete();
+                $product->delete();
+            });
         } catch (QueryException) {
             return response()->json([
                 'message' => 'Product cannot be deleted because it is used by existing orders.',

@@ -216,6 +216,19 @@ export type ApiOrderItem = {
     price?: number | string;
     discount_percentage?: number;
   };
+  game_keys?: ApiGameKey[];
+};
+
+export type ApiGameKey = {
+  id: number;
+  product_id: number;
+  order_item_id?: number | null;
+  key_value: string;
+  status: "available" | "assigned" | "used" | string;
+  assigned_at?: string | null;
+  used_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type ApiOrder = {
@@ -253,6 +266,12 @@ export type CreateOrderPayload = {
     product_id: number;
     quantity: number;
   }>;
+  payment: {
+    full_name: string;
+    card_number: string;
+    expiration: string;
+    cvc: string;
+  };
 };
 
 type ApiAuthResponse = {
@@ -486,7 +505,7 @@ export const getApiOrderById = async (
 export const updateApiOrderStatus = async (
   token: string,
   orderId: number,
-  status: "pending" | "completed" | "cancelled",
+  status: "completed" | "cancelled",
 ): Promise<{ message: string; order: ApiOrder }> => {
   return fetchJson<{ message: string; order: ApiOrder }>(
     `/orders/${orderId}/status`,

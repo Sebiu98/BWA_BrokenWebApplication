@@ -3,15 +3,41 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GameKey;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use RuntimeException;
 
 class OrderController extends Controller
 {
+    private function expirationValidationError(string $expiration): ?string
+    {
+        if (! preg_match('/^\d{2}\/\d{2}$/', $expiration)) {
+            return 'Expiration must be in MM/YY format.';
+        }
+
+        [$monthText, $yearText] = explode('/', $expiration);
+        $month = (int) $monthText;
+        $year = (int) $yearText;
+
+        if ($month < 1 || $month > 12) {
+            return 'Expiration month must be between 01 and 12.';
+        }
+
+        $currentYear = (int) date('y');
+        $currentMonth = (int) date('n');
+
+        if ($year < $currentYear || ($year === $currentYear && $month < $currentMonth)) {
+            return 'Card is expired.';
+        }
+
+        return null;
+    }
+
     private function discountedUnitPrice(Product $product): float
     {
         $basePrice = (float) $product->price;
@@ -35,12 +61,28 @@ class OrderController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'payment' => ['required', 'array'],
+            'payment.full_name' => ['required', 'string', 'min:2', 'max:80'],
+            'payment.card_number' => ['required', 'string', 'regex:/^\d{13,19}$/'],
+            'payment.expiration' => ['required', 'string'],
+            'payment.cvc' => ['required', 'string', 'regex:/^\d{3,4}$/'],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed.',
                 'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $expiration = (string) data_get($request->all(), 'payment.expiration', '');
+        $expirationError = $this->expirationValidationError($expiration);
+        if ($expirationError !== null) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => [
+                    'payment.expiration' => [$expirationError],
+                ],
             ], 422);
         }
 
@@ -83,19 +125,51 @@ class OrderController extends Controller
             ];
         }
 
-        $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
-            $createdOrder = Order::query()->create([
-                'user_id' => $authUser->id,
-                'total_amount' => round($totalAmount, 2),
-                'status' => 'pending',
-            ]);
+        try {
+            $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
+                $createdOrder = Order::query()->create([
+                    'user_id' => $authUser->id,
+                    'total_amount' => round($totalAmount, 2),
+                    'status' => 'pending',
+                ]);
 
-            $createdOrder->items()->createMany($orderItemsPayload);
+                $createdItems = $createdOrder->items()->createMany($orderItemsPayload);
 
-            return $createdOrder;
-        });
+                foreach ($createdItems as $createdItem) {
+                    $requiredKeys = (int) $createdItem->quantity;
 
-        $order->load(['items.product:id,name,price,discount_percentage']);
+                    $availableKeys = GameKey::query()
+                        ->where('product_id', $createdItem->product_id)
+                        ->where('status', 'available')
+                        ->lockForUpdate()
+                        ->orderBy('id')
+                        ->limit($requiredKeys)
+                        ->get();
+
+                    if ($availableKeys->count() < $requiredKeys) {
+                        throw new RuntimeException('Not enough keys available for one or more products.');
+                    }
+
+                    foreach ($availableKeys as $key) {
+                        $key->order_item_id = $createdItem->id;
+                        $key->status = 'assigned';
+                        $key->assigned_at = now();
+                        $key->save();
+                    }
+                }
+
+                return $createdOrder;
+            });
+        } catch (RuntimeException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
+
+        $order->load([
+            'items.product:id,name,price,discount_percentage',
+            'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
+        ]);
 
         return response()->json([
             'message' => 'Order created successfully.',
@@ -116,6 +190,7 @@ class OrderController extends Controller
         $orders = Order::query()
             ->with([
                 'items.product:id,name,price,discount_percentage',
+                'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
             ])
             ->where('user_id', $authUser->id)
             ->orderByDesc('id')
@@ -138,6 +213,7 @@ class OrderController extends Controller
             ->with([
                 'user:id,email',
                 'items.product:id,name,price,discount_percentage',
+                'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
             ])
             ->orderByDesc('id')
             ->get();
@@ -159,6 +235,7 @@ class OrderController extends Controller
             ->with([
                 'user:id,email',
                 'items.product:id,name,price,discount_percentage',
+                'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
             ])
             ->find($id);
 
@@ -188,7 +265,7 @@ class OrderController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'status' => ['required', 'in:pending,completed,cancelled'],
+            'status' => ['required', 'in:completed,cancelled'],
         ]);
 
         if ($validator->fails()) {
@@ -206,11 +283,56 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $order->status = $validator->validated()['status'];
-        $order->save();
+        $nextStatus = $validator->validated()['status'];
+        $currentStatus = (string) $order->status;
+
+        if ($currentStatus !== 'pending' && $currentStatus !== $nextStatus) {
+            return response()->json([
+                'message' => 'Order status can be updated only when it is pending.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($order, $nextStatus) {
+            $order->status = $nextStatus;
+            $order->save();
+
+            if ($nextStatus !== 'completed' && $nextStatus !== 'cancelled') {
+                return;
+            }
+
+            $orderItemIds = $order->items()->pluck('id');
+
+            if ($orderItemIds->isEmpty()) {
+                return;
+            }
+
+            if ($nextStatus === 'completed') {
+                GameKey::query()
+                    ->whereIn('order_item_id', $orderItemIds)
+                    ->where('status', 'assigned')
+                    ->update([
+                        'status' => 'used',
+                        'used_at' => now(),
+                    ]);
+
+                return;
+            }
+
+            GameKey::query()
+                ->whereIn('order_item_id', $orderItemIds)
+                ->where('status', 'assigned')
+                ->update([
+                    'status' => 'available',
+                    'order_item_id' => null,
+                    'assigned_at' => null,
+                    'used_at' => null,
+                ]);
+        });
+
         $order->load([
             'user:id,email',
             'items.product:id,name,price,discount_percentage',
+            'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
         ]);
 
         return response()->json([

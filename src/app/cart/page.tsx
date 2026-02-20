@@ -13,7 +13,7 @@ import {
   updateCartItem,
 } from "../../lib/cart-storage";
 
-//Pagina carrello con dati mock.
+//Pagina carrello con dati locali (carrello) e catalogo API.
 const CartPage = () => {
   //Stato locale del carrello.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -90,8 +90,7 @@ const CartPage = () => {
     });
   }
 
-  const serviceFee = subtotal > 0 ? 1.99 : 0;
-  const total = subtotal + serviceFee;
+  const total = subtotal;
 
   //TODO:vulnerabilita:manipolazione prezzi/quantita se il backend accetta il totale dal client.
   //TODO:vulnerabilita:open redirect dopo add-to-cart (quando avremo backend).
@@ -253,10 +252,6 @@ const CartPage = () => {
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Service fee</span>
-                <span>${serviceFee.toFixed(2)}</span>
               </div>
               <div className="border-t border-slate-200 pt-3 text-base font-semibold text-slate-900">
                 <div className="flex items-center justify-between">

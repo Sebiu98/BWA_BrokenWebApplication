@@ -64,7 +64,7 @@ const toAuthErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-//Hook semplice per gestire la sessione demo.
+//Hook per gestire la sessione auth.
 export function useAuth() {
   //Sessione attuale letta dal browser.
   const [session, setSession] = useState<AuthSession | null>(null);
