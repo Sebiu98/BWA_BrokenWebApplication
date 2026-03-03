@@ -51,7 +51,7 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        // 1) Verifica utente loggato.
+        // Verifica utente loggato.
         $authUser = $request->user();
 
         if (! $authUser) {
@@ -60,7 +60,7 @@ class OrderController extends Controller
             ], 401);
         }
 
-        // 2) Validazione payload checkout.
+        // Validazione payload checkout.
         $validator = Validator::make($request->all(), [
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
@@ -79,7 +79,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // 3) Check manuale sulla scadenza carta.
+        // Check manuale sulla scadenza carta.
         $expiration = (string) data_get($request->all(), 'payment.expiration', '');
         $expirationError = $this->expirationValidationError($expiration);
         if ($expirationError !== null) {
@@ -91,7 +91,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // 4) Normalizza item duplicati nello stesso ordine (somma quantita per product_id).
+        // Normalizza item duplicati nello stesso ordine (somma quantita per product_id).
         $payload = $validator->validated();
         $items = $payload['items'];
 
@@ -102,7 +102,7 @@ class OrderController extends Controller
             $groupedQuantities[$productId] = ($groupedQuantities[$productId] ?? 0) + $quantity;
         }
 
-        // 5) Carica solo prodotti abilitati (is_enabled=true).
+        // Carica solo prodotti abilitati (is_enabled=true).
         $productIds = array_keys($groupedQuantities);
         $products = Product::query()
             ->where('is_enabled', true)
@@ -110,7 +110,7 @@ class OrderController extends Controller
             ->get()
             ->keyBy('id');
 
-        // 6) Calcolo totale e costruzione righe ordine.
+        // Calcolo totale e costruzione righe ordine.
         $totalAmount = 0;
         $orderItemsPayload = [];
 
@@ -134,7 +134,7 @@ class OrderController extends Controller
         }
 
         try {
-            // 7) Transazione: crea ordine, crea righe e assegna game key disponibili.
+            // Transazione: crea ordine, crea righe e assegna game key disponibili.
             $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
                 $createdOrder = Order::query()->create([
                     'user_id' => $authUser->id,
@@ -216,12 +216,16 @@ class OrderController extends Controller
         // Endpoint admin: mostra tutti gli ordini.
         $authUser = $request->user();
 
-        if (! $authUser || $authUser->role !== 'admin') {
+
+        // Funzione implementata correttamente
+        
+        /*if (! $authUser || $authUser->role !== 'admin') {
             return response()->json([
                 'message' => 'Forbidden.',
             ], 403);
-        }
+        }*/
 
+        // VULN-02 BFLA: manca il controllo ruolo admin, quindi qualsiasi utente autenticato puo usare questo endpoint admin e leggere tutti gli ordini.
         $orders = Order::query()
             ->with([
                 'user:id,email',
@@ -273,11 +277,11 @@ class OrderController extends Controller
         }
 
         // Funzione implementata correttamente:
-        // if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
-        //     return response()->json([
-        //         'message' => 'Forbidden.',
-        //     ], 403);
-        // }
+        /*if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
+        }*/
         // VULN-01 IDOR: manca il controllo ownership, quindi qualsiasi utente autenticato puo leggere un ordine conoscendo l'id.
         return response()->json($order);
     }
