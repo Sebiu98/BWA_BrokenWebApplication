@@ -23,9 +23,6 @@ const AdminOrdersPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
-
-  //TODO:vulnerabilita:IDOR sugli ordini senza controlli server-side.
-  //TODO:vulnerabilita:accesso admin solo lato client.
   useEffect(() => {
     const loadOrders = async () => {
       if (!session?.token || !isAdmin) {

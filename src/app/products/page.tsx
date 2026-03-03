@@ -38,7 +38,6 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
   const categoryText = resolvedParams.category
     ? resolvedParams.category.trim()
     : "";
-  //TODO:vulnerabilita:reflected XSS se la ricerca viene renderizzata senza escaping.
 
   const searchLower = searchText ? searchText.toLowerCase() : "";
 

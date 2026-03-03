@@ -53,10 +53,6 @@ const AuthForm = ({ mode }: { mode: AuthMode }) => {
     event.preventDefault();
     setErrorMessage("");
     setIsSubmitting(true);
-
-    //TODO:vulnerabilita:login senza rate limit per brute force.
-    //TODO:vulnerabilita:SQLi nel backend se la query non e parametrizzata.
-    //TODO:vulnerabilita:token di sessione prevedibile o non rigenerato.
     try {
       if (mode === "login") {
         await login({ email, password });

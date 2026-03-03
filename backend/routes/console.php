@@ -3,7 +3,6 @@
 use App\Models\GameKey;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -22,5 +21,5 @@ Artisan::command('keys:purge-expired', function () {
     $this->info("Deleted {$deleted} old used keys.");
 })->purpose('Delete used game keys older than retention days');
 
-Schedule::command('keys:purge-expired')
-    ->dailyAt('03:00');
+
+

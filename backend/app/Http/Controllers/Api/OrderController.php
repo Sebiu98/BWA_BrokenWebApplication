@@ -234,9 +234,9 @@ class OrderController extends Controller
         return response()->json($orders);
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request): JsonResponse
     {
-        // Dettaglio singolo ordine (admin vede tutto, utente solo i suoi).
+        // Dettaglio singolo ordine letto da body POST, cosi l'id non sta nel path URL.
         $authUser = $request->user();
 
         if (! $authUser) {
@@ -244,6 +244,19 @@ class OrderController extends Controller
                 'message' => 'Unauthorized.',
             ], 401);
         }
+
+        $validator = Validator::make($request->all(), [
+            'order_id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $id = (int) $validator->validated()['order_id'];
 
         $order = Order::query()
             ->with([
@@ -259,15 +272,15 @@ class OrderController extends Controller
             ], 404);
         }
 
-        if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
-            return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
-        }
-
+        // Funzione implementata correttamente:
+        // if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
+        //     return response()->json([
+        //         'message' => 'Forbidden.',
+        //     ], 403);
+        // }
+        // VULN-01 IDOR: manca il controllo ownership, quindi qualsiasi utente autenticato puo leggere un ordine conoscendo l'id.
         return response()->json($order);
     }
-
     public function updateStatus(Request $request, int $id): JsonResponse
     {
         // Cambio stato consentito solo ad admin.

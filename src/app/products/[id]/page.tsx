@@ -91,8 +91,6 @@ const ProductPage = async ({ params }: ProductPageProps) => {
       </Link>,
     );
   }
-
-  //TODO:vulnerabilita:stored XSS se la descrizione arriva dal backend senza sanitizzazione.
   //Layout principale.
   return (
     <>

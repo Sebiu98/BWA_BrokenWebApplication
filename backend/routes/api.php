@@ -44,7 +44,7 @@ Route::middleware(['auth.jwt', EnsureUserIsActive::class])->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/me', [OrderController::class, 'myOrders']);
     Route::get('/orders/admin', [OrderController::class, 'adminOrders']);
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->whereNumber('id');
+    Route::post('/orders/show', [OrderController::class, 'show']);
     Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->whereNumber('id');
     Route::post('/products/{id}/comments', [CommentController::class, 'store'])->whereNumber('id');
     Route::delete('/comments/{id}', [AdminCommentController::class, 'destroy'])->whereNumber('id');

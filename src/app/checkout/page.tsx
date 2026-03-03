@@ -103,9 +103,6 @@ const CheckoutPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
-
-    //TODO:vulnerabilita:CSRF sulla conferma pagamento senza token.
-    //TODO:vulnerabilita:SSRF se la validazione del pagamento chiama URL esterne.
     if (!session?.token || !user) {
       setErrorMessage("Please login again and retry checkout.");
       return;
@@ -179,10 +176,11 @@ const CheckoutPage = () => {
       });
 
       const createdOrder = response.order;
-      const createdOrderId = `ord-${createdOrder.id}`;
+      const createdOrderId = createdOrder.id;
       clearCart();
       setCartItems([]);
-      router.push(`/order-success/${createdOrderId}`);
+      window.localStorage.setItem("bwa_last_order_id", String(createdOrderId));
+      router.push("/order-success");
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(error.message);

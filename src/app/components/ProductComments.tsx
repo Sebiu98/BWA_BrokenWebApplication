@@ -16,7 +16,6 @@ type ProductCommentsProps = {
 
 //Lista commenti per un prodotto.
 const ProductComments = ({ productId }: ProductCommentsProps) => {
-  //TODO:vulnerabilita:stored XSS nei commenti se salvati senza sanitizzazione.
   //Dati user per mostrare il form solo se loggato.
   const { user, session, isAdmin, isReady } = useAuth();
   const [comments, setComments] = useState<ApiComment[]>([]);

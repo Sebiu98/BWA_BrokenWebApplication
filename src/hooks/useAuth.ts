@@ -193,8 +193,11 @@ export function useAuth() {
       }
     }
 
-    //Pulisce la sessione e avvisa gli altri componenti.
+    //Pulisce la sessione e l'ultimo ordine salvato nel browser.
     clearSession();
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("bwa_last_order_id");
+    }
     setSession(null);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("bwa-auth-change"));

@@ -504,10 +504,13 @@ export const getApiOrderById = async (
   token: string,
   id: number,
 ): Promise<ApiOrder> => {
-  return fetchJson<ApiOrder>(`/orders/${id}`, {
+  return fetchJson<ApiOrder>("/orders/show", {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({ order_id: id }),
   });
 };
 

@@ -10,7 +10,6 @@ type ErrorPageProps = {
 };
 
 const ErrorPage = ({ error, reset }: ErrorPageProps) => {
-  //TODO:vulnerabilita:mostrare stack trace o dettagli sensibili.
   useEffect(() => {
     console.error(error);
   }, [error]);

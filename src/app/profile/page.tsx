@@ -23,7 +23,6 @@ const ProfilePage = () => {
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   const [isProfileReady, setIsProfileReady] = useState(false);
   const [isOrdersReady, setIsOrdersReady] = useState(false);
-  //TODO:vulnerabilita:IDOR se si permette di cambiare userId senza controlli server-side.
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -120,7 +119,7 @@ const ProfilePage = () => {
   for (let i = 0; i < purchaseHistory.length; i += 1) {
     const order = purchaseHistory[i];
     const normalizedStatus = normalizeStatus(order.status);
-    if (normalizedStatus === "cancelled") {
+    if (normalizedStatus !== "completed") {
       continue;
     }
 
@@ -256,3 +255,6 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+
+
+

@@ -22,9 +22,6 @@ const AdminPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   const [isProductsReady, setIsProductsReady] = useState(false);
 
-  //TODO:vulnerabilita:accesso admin senza controlli server-side.
-  //TODO:vulnerabilita:privilege escalation se il ruolo e solo client-side.
-
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
@@ -113,6 +110,9 @@ const AdminPage = () => {
   //Calcola dati principali.
   let totalRevenue = 0;
   for (let i = 0; i < orders.length; i += 1) {
+    if (orders[i].status !== "completed") {
+      continue;
+    }
     totalRevenue += Number(orders[i].total_amount);
   }
 
@@ -239,3 +239,6 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
+
+
+
