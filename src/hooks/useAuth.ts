@@ -16,7 +16,7 @@ import {
   registerApiAuth,
 } from "../lib/api";
 
-//Credenziali base usate nel form.
+// Dati base usati dai form auth.
 export type AuthCredentials = {
   email: string;
   password: string;
@@ -64,16 +64,16 @@ const toAuthErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-//Hook per gestire la sessione auth.
+// Hook unico per la sessione utente.
 export function useAuth() {
-  //Sessione attuale letta dal browser (helper in src/lib/auth-session.ts).
+  // Sessione letta dal browser.
   const [session, setSession] = useState<AuthSession | null>(null);
-  //Flag semplice per la UI.
+  // Flag piccolo per evitare UI "mezze caricate".
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    //Carica la sessione dopo il primo render per evitare mismatch SSR/client.
-    //Se c'e un token, chiamiamo /auth/me (src/lib/api.ts) per verificarlo.
+    // Dopo il primo render provo a ricaricare la sessione dal browser.
+    // Se c'e un token, chiedo al backend se e ancora valido.
     const timer = window.setTimeout(async () => {
       const storedSession = readSession();
 
@@ -103,8 +103,7 @@ export function useAuth() {
         setIsReady(true);
       }
     }, 0);
-    //Ascolta cambi di sessione (login/logout) senza refresh pagina.
-    //Evento custom locale + evento storage per sync tra tab diversi.
+    // Sync semplice tra componenti e anche tra tab diversi.
     const handleAuthChange = () => {
       const nextSession = readSession();
       setSession(nextSession);
@@ -121,7 +120,7 @@ export function useAuth() {
 
   const login = async ({ email, password }: AuthCredentials) => {
     try {
-      //Chiama endpoint backend e salva il token JWT ritornato.
+      // Chiama il backend e salva il token tornato.
       const response = await loginApiAuth({ email, password });
       const nextSession: AuthSession = {
         token: response.token,
@@ -149,7 +148,7 @@ export function useAuth() {
     name,
     surname,
   }: AuthCredentials) => {
-    //Controllo minimo lato UI prima di inviare i dati al backend.
+    // Controllo veloce lato UI prima della richiesta.
     if (!username || !name || !surname) {
       throw new Error("Username, name and surname are required.");
     }
@@ -183,17 +182,17 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    //Se abbiamo un token, chiediamo al backend di invalidarlo (blacklist JWT).
+    // Se c'e un token provo anche a invalidarlo lato backend.
     const activeToken = session?.token;
     if (activeToken) {
       try {
         await logoutApiAuth(activeToken);
       } catch {
-        // Anche se l'API fallisce, chiudiamo la sessione locale.
+        // Anche se fallisce lato API, in locale esco comunque.
       }
     }
 
-    //Pulisce la sessione e l'ultimo ordine salvato nel browser.
+    // Pulizia locale.
     clearSession();
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("bwa_last_order_id");
@@ -204,7 +203,7 @@ export function useAuth() {
     }
   };
 
-  //Dati di comodo per la UI.
+  // Dati pronti da usare nei componenti.
   const user = session?.user ?? null;
   const isAuthenticated = Boolean(session);
   const isAdmin = user?.role === "admin";
@@ -220,3 +219,7 @@ export function useAuth() {
     logout,
   };
 }
+
+
+
+

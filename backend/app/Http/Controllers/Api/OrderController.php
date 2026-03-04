@@ -14,7 +14,7 @@ use RuntimeException;
 
 class OrderController extends Controller
 {
-    // Controllo semplice scadenza carta: formato MM/YY + non scaduta.
+    // Check semplice scadenza carta: formato MM/YY e data non passata.
     private function expirationValidationError(string $expiration): ?string
     {
         if (! preg_match('/^\d{2}\/\d{2}$/', $expiration)) {
@@ -39,7 +39,7 @@ class OrderController extends Controller
         return null;
     }
 
-    // Prezzo finale usato nel checkout (applica sconto prodotto se presente).
+    // Calcola il prezzo finale applicando lo sconto del prodotto, se c'e.
     private function discountedUnitPrice(Product $product): float
     {
         $basePrice = (float) $product->price;
@@ -51,7 +51,7 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        // Verifica utente loggato.
+        // Prima cosa: serve un utente autenticato.
         $authUser = $request->user();
 
         if (! $authUser) {
@@ -60,7 +60,7 @@ class OrderController extends Controller
             ], 401);
         }
 
-        // Validazione payload checkout.
+        // Validazione payload del checkout.
         $validator = Validator::make($request->all(), [
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
@@ -79,7 +79,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Check manuale sulla scadenza carta.
+        // Controllo extra sulla scadenza carta.
         $expiration = (string) data_get($request->all(), 'payment.expiration', '');
         $expirationError = $this->expirationValidationError($expiration);
         if ($expirationError !== null) {
@@ -91,7 +91,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Normalizza item duplicati nello stesso ordine (somma quantita per product_id).
+        // Se lo stesso prodotto compare due volte, sommo le quantita.
         $payload = $validator->validated();
         $items = $payload['items'];
 
@@ -102,7 +102,7 @@ class OrderController extends Controller
             $groupedQuantities[$productId] = ($groupedQuantities[$productId] ?? 0) + $quantity;
         }
 
-        // Carica solo prodotti abilitati (is_enabled=true).
+        // Carico solo prodotti ancora attivi/visibili.
         $productIds = array_keys($groupedQuantities);
         $products = Product::query()
             ->where('is_enabled', true)
@@ -110,7 +110,7 @@ class OrderController extends Controller
             ->get()
             ->keyBy('id');
 
-        // Calcolo totale e costruzione righe ordine.
+        // Qui preparo totale e righe ordine.
         $totalAmount = 0;
         $orderItemsPayload = [];
 
@@ -134,7 +134,7 @@ class OrderController extends Controller
         }
 
         try {
-            // Transazione: crea ordine, crea righe e assegna game key disponibili.
+            // Transazione: ordine, righe e key devono stare insieme o saltare insieme.
             $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
                 $createdOrder = Order::query()->create([
                     'user_id' => $authUser->id,
@@ -156,7 +156,7 @@ class OrderController extends Controller
                         ->get();
 
                     if ($availableKeys->count() < $requiredKeys) {
-                        // Se non ci sono key abbastanza, rollback automatico della transazione.
+                        // Se le key non bastano, si annulla tutto.
                         throw new RuntimeException('Not enough keys available for one or more products.');
                     }
 
@@ -176,7 +176,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Ricarica relazioni utili per frontend (dettaglio ordine + key assegnate).
+        // Ricarico relazioni utili per il frontend.
         $order->load([
             'items.product:id,name,price,discount_percentage',
             'items.gameKeys:id,product_id,order_item_id,key_value,status,assigned_at,used_at',
@@ -190,7 +190,7 @@ class OrderController extends Controller
 
     public function myOrders(Request $request): JsonResponse
     {
-        // Lista ordini dell'utente autenticato.
+        // Ordini del solo utente loggato.
         $authUser = $request->user();
 
         if (! $authUser) {
@@ -213,7 +213,7 @@ class OrderController extends Controller
 
     public function adminOrders(Request $request): JsonResponse
     {
-        // Endpoint admin: mostra tutti gli ordini.
+        // Lista completa ordini: questa in teoria e solo admin.
         $authUser = $request->user();
 
 
@@ -240,7 +240,7 @@ class OrderController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        // Dettaglio singolo ordine letto da body POST, cosi l'id non sta nel path URL.
+        // Il dettaglio ordine ora legge order_id dal body, non dal path.
         $authUser = $request->user();
 
         if (! $authUser) {
@@ -296,7 +296,7 @@ class OrderController extends Controller
             ], 403);
         }
 
-        // Ora accettiamo solo completed/cancelled per evitare passaggi strani.
+        // Accetto solo completed/cancelled, niente ritorno a pending.
         $validator = Validator::make($request->all(), [
             'status' => ['required', 'in:completed,cancelled'],
         ]);
@@ -340,7 +340,7 @@ class OrderController extends Controller
             }
 
             if ($nextStatus === 'completed') {
-                // Completed: le key assegnate diventano "used".
+                // Completed = le key assegnate diventano used.
                 GameKey::query()
                     ->whereIn('order_item_id', $orderItemIds)
                     ->where('status', 'assigned')
@@ -353,7 +353,7 @@ class OrderController extends Controller
             }
 
             GameKey::query()
-                // Cancelled: rilasciamo le key e tornano disponibili nel pool.
+                // Cancelled = rilascio le key e tornano nel pool.
                 ->whereIn('order_item_id', $orderItemIds)
                 ->where('status', 'assigned')
                 ->update([
@@ -376,3 +376,4 @@ class OrderController extends Controller
         ]);
     }
 }
+
