@@ -49,9 +49,11 @@ class UserController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $adminCheck = $this->ensureAdmin($request);
-        if ($adminCheck) {
-            return $adminCheck;
+        $authUser = $request->user();
+        if (! $authUser) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
         }
 
         $user = User::query()->find($id);
@@ -59,6 +61,30 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'User not found.',
             ], 404);
+        }
+
+        if ($authUser->role !== 'admin' && $authUser->id !== $user->id) {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
+        }
+
+        if ($authUser->role !== 'admin') {
+            // Funzione implementata correttamente:
+            // $safeData = $request->validate([
+            //     'username' => ['sometimes', 'string', 'max:255', 'unique:users,username,' . $user->id],
+            //     'name' => ['sometimes', 'string', 'max:255'],
+            //     'surname' => ['sometimes', 'string', 'max:255'],
+            //     'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            // ]);
+            // $user->update($safeData);
+            // VULN-05 Mass Assignment: un utente normale puo aggiornare il proprio record con tutti i campi fillable, inclusi role e is_active.
+            $user->update($request->all());
+
+            return response()->json([
+                'message' => 'User updated successfully.',
+                'user' => $user->fresh(),
+            ]);
         }
 
         $validator = Validator::make($request->all(), [

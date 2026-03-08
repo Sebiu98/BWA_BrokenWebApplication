@@ -86,7 +86,14 @@ const ProductComments = ({ productId }: ProductCommentsProps) => {
         <div className="mt-2 text-sm text-slate-600">
           Rating: {comment.rating} / 5
         </div>
+        {/* Funzione implementata correttamente:
         <p className="mt-3 text-sm text-slate-700">{comment.content}</p>
+        */}
+        {/* VULN-06 Stored XSS: il commento viene renderizzato come HTML senza sanitizzazione. */}
+        <p
+          className="mt-3 text-sm text-slate-700"
+          dangerouslySetInnerHTML={{ __html: comment.content }}
+        />
         {isAdmin ? (
           <button
             type="button"
@@ -229,3 +236,4 @@ const ProductComments = ({ productId }: ProductCommentsProps) => {
 };
 
 export default ProductComments;
+

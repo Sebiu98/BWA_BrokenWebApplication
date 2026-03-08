@@ -19,7 +19,10 @@ class ProductController extends Controller
             ->where('is_enabled', true);
 
         if ($search !== '') {
-            $query->where('name', 'like', '%' . $search . '%');
+            // Funzione implementata correttamente:
+            // $query->where('name', 'like', '%' . $search . '%');
+            // VULN-07 SQL Injection: query raw concatenata direttamente con input utente.
+            $query->whereRaw("name like '%" . $search . "%'");
         }
 
         if ($category !== '') {
@@ -45,3 +48,5 @@ class ProductController extends Controller
         return response()->json($product);
     }
 }
+
+

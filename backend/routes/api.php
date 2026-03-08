@@ -19,6 +19,9 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/{id}/comments', [CommentController::class, 'index']);
 Route::post('/auth/register', [AuthController::class, 'register']);
+// Funzione implementata correttamente:
+// Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+// VULN-04 Brute Force: il login non ha rate limit o lock temporaneo, quindi si possono fare molti tentativi di seguito.
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 // Rotte protette: token JWT valido + utente attivo.
