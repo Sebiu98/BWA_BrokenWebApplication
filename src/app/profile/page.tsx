@@ -249,12 +249,10 @@ const ProfilePage = () => {
         isOpen={Boolean(selectedOrder)}
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
+        canViewKeys
       />
     </main>
   );
 };
 
 export default ProfilePage;
-
-
-

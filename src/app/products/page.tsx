@@ -41,6 +41,7 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
 
   const searchLower = searchText ? searchText.toLowerCase() : "";
 
+
   //Legge categorie e prodotti dal backend Laravel.
   let categoriesData: Array<{ name: string }> = [];
   let filteredProducts: Awaited<ReturnType<typeof getApiProducts>> = [];
@@ -181,6 +182,11 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
                 Find the best deals on verified keys, delivered instantly after
                 checkout.
               </p>
+              {searchText ? (
+                <p className="mt-2 text-sm text-slate-600">
+                  Showing results for "{searchText}"
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -260,3 +266,8 @@ const ProductsPage = async ({ searchParams }: ProductsPageProps) => {
 };
 
 export default ProductsPage;
+
+
+
+
+

@@ -6,6 +6,7 @@ type OrderDetailsModalProps = {
   isOpen: boolean;
   order: ApiOrder | null;
   onClose: () => void;
+  canViewKeys?: boolean;
 };
 
 const normalizeStatus = (
@@ -29,7 +30,12 @@ const toKeyStatusClassName = (status: string): string => {
   return "bg-slate-100 text-slate-700";
 };
 
-const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) => {
+const OrderDetailsModal = ({
+  isOpen,
+  order,
+  onClose,
+  canViewKeys = false,
+}: OrderDetailsModalProps) => {
   if (!isOpen || !order) {
     return null;
   }
@@ -41,6 +47,8 @@ const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) =
       : normalizedStatus === "cancelled"
         ? "bg-red-100 text-red-700"
         : "bg-amber-100 text-amber-700";
+
+  const shouldShowKeys = canViewKeys && normalizedStatus === "completed";
 
   return (
     <div
@@ -133,35 +141,39 @@ const OrderDetailsModal = ({ isOpen, order, onClose }: OrderDetailsModalProps) =
                   </div>
                 </div>
                 <div className="mt-3 space-y-2">
-                  {gameKeys.map((keyItem) => {
-                    return (
-                      <div
-                        key={keyItem.id}
-                        className="flex flex-wrap items-center gap-2"
-                      >
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900">
-                          {keyItem.key_value}
-                        </span>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${toKeyStatusClassName(
-                            keyItem.status,
-                          )}`}
-                        >
-                          {keyItem.status}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {Array.from({ length: missingKeysCount }).map((_, index) => {
-                    return (
-                      <p
-                        key={`missing-key-${item.id}-${index}`}
-                        className="text-xs font-semibold text-slate-500"
-                      >
-                        Key is no longer available.
-                      </p>
-                    );
-                  })}
+                  {shouldShowKeys ? (
+                    <>
+                      {gameKeys.map((keyItem) => {
+                        return (
+                          <div
+                            key={keyItem.id}
+                            className="flex flex-wrap items-center gap-2"
+                          >
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-900">
+                              {keyItem.key_value}
+                            </span>
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${toKeyStatusClassName(
+                                keyItem.status,
+                              )}`}
+                            >
+                              {keyItem.status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {Array.from({ length: missingKeysCount }).map((_, index) => {
+                        return (
+                          <p
+                            key={`missing-key-${item.id}-${index}`}
+                            className="text-xs font-semibold text-slate-500"
+                          >
+                            Key is no longer available.
+                          </p>
+                        );
+                      })}
+                    </>
+                  ) : null}
                 </div>
               </div>
             );

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', HealthController::class);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{id}/name', [ProductController::class, 'name']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/{id}/comments', [CommentController::class, 'index']);
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -52,3 +53,4 @@ Route::middleware(['auth.jwt', EnsureUserIsActive::class])->group(function () {
     Route::post('/products/{id}/comments', [CommentController::class, 'store'])->whereNumber('id');
     Route::delete('/comments/{id}', [AdminCommentController::class, 'destroy'])->whereNumber('id');
 });
+

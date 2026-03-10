@@ -4,24 +4,27 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
-import { getApiProducts, type CatalogProduct } from "../../lib/api";
+import {
+  getApiProductNameById,
+  getApiProducts,
+  type CatalogProduct,
+} from "../../lib/api";
 import {
   type CartItem,
   clearCart,
   readCart,
   removeCartItem,
   updateCartItem,
+  writeCart,
 } from "../../lib/cart-storage";
 
-//Pagina carrello con dati locali (carrello) e catalogo API.
+// Pagina carrello con dati locali (carrello) e catalogo API.
 const CartPage = () => {
-  //Stato locale del carrello.
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [productsCatalog, setProductsCatalog] = useState<CatalogProduct[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    //Carica il carrello dopo il primo render.
     const timer = window.setTimeout(async () => {
       const storedCart = readCart();
       setCartItems(storedCart);
@@ -35,7 +38,6 @@ const CartPage = () => {
       }
     }, 0);
 
-    //Aggiorna il carrello quando cambia altrove.
     const handleCartChange = () => {
       const storedCart = readCart();
       setCartItems(storedCart);
@@ -51,7 +53,54 @@ const CartPage = () => {
     };
   }, []);
 
-  //Costruisce le righe per la UI.
+
+  useEffect(() => {
+    const hydrateMissingNames = async () => {
+      if (cartItems.length === 0) {
+        return;
+      }
+
+      let changed = false;
+      const nextItems = [...cartItems];
+
+      for (let i = 0; i < nextItems.length; i += 1) {
+        const item = nextItems[i];
+
+        if (item.productName && item.productName.trim() !== "") {
+          continue;
+        }
+
+        const fromCatalog = productsCatalog.find(
+          (entry) => entry.id === item.productId,
+        )?.name;
+
+        let resolvedName = fromCatalog ?? null;
+
+        if (!resolvedName) {
+          try {
+            resolvedName = await getApiProductNameById(item.productId);
+          } catch {
+            resolvedName = null;
+          }
+        }
+
+        if (resolvedName) {
+          nextItems[i] = {
+            ...item,
+            productName: resolvedName,
+          };
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        writeCart(nextItems);
+        setCartItems(nextItems);
+      }
+    };
+
+    void hydrateMissingNames();
+  }, [cartItems, productsCatalog]);
   const detailedItems: {
     productId: string;
     name: string;
@@ -62,7 +111,9 @@ const CartPage = () => {
     discountPercentage: number;
     quantity: number;
     lineTotal: number;
+    isUnavailable: boolean;
   }[] = [];
+
   let subtotal = 0;
   let totalItems = 0;
 
@@ -71,9 +122,24 @@ const CartPage = () => {
     const product = productsCatalog.find(
       (item) => item.id === cartItem.productId,
     );
+
     if (!product) {
+      totalItems += cartItem.quantity;
+      detailedItems.push({
+        productId: cartItem.productId,
+        name: cartItem.productName ?? "Disabled product",
+        image: "/BWA_logo.png",
+        platform: "Disabled",
+        price: 0,
+        originalPrice: undefined,
+        discountPercentage: 0,
+        quantity: cartItem.quantity,
+        lineTotal: 0,
+        isUnavailable: true,
+      });
       continue;
     }
+
     const lineTotal = product.price * cartItem.quantity;
     subtotal += lineTotal;
     totalItems += cartItem.quantity;
@@ -87,13 +153,13 @@ const CartPage = () => {
       discountPercentage: product.discountPercentage,
       quantity: cartItem.quantity,
       lineTotal,
+      isUnavailable: false,
     });
   }
 
   const total = subtotal;
 
   const handleQuantityChange = (productId: string, value: string) => {
-    //Aggiorna la quantita e ricarica il carrello.
     let nextQuantity = Number(value);
     if (!nextQuantity || nextQuantity < 1) {
       nextQuantity = 1;
@@ -103,13 +169,11 @@ const CartPage = () => {
   };
 
   const handleRemove = (productId: string) => {
-    //Rimuove il prodotto dal carrello.
     removeCartItem(productId);
     setCartItems(readCart());
   };
 
   const handleClear = () => {
-    //Svuota tutto il carrello.
     clearCart();
     setCartItems([]);
   };
@@ -147,7 +211,6 @@ const CartPage = () => {
     );
   }
 
-  //Layout carrello completo.
   return (
     <main className="bg-slate-50">
       <MaxWidthWrapper className="pb-24 pt-4 sm:pb-32 lg:pt-10 xl:pt-5 lg:pb-56">
@@ -188,21 +251,27 @@ const CartPage = () => {
                     <h2 className="mt-2 text-lg font-semibold text-slate-900">
                       {item.name}
                     </h2>
-                    {item.discountPercentage > 0 ? (
+                    {!item.isUnavailable && item.discountPercentage > 0 ? (
                       <p className="mt-1">
                         <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
                           -{item.discountPercentage}%
                         </span>
                       </p>
                     ) : null}
-                    <p className="mt-1 text-sm text-slate-600">
-                      {item.originalPrice ? (
-                        <span className="mr-2 text-xs text-slate-400 line-through">
-                          ${item.originalPrice.toFixed(2)}
-                        </span>
-                      ) : null}
-                      ${item.price.toFixed(2)}
-                    </p>
+                    {item.isUnavailable ? (
+                      <p className="mt-1 text-sm font-semibold text-amber-700">
+                        Disabled product (cannot be purchased)
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-600">
+                        {item.originalPrice ? (
+                          <span className="mr-2 text-xs text-slate-400 line-through">
+                            ${item.originalPrice.toFixed(2)}
+                          </span>
+                        ) : null}
+                        ${item.price.toFixed(2)}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-2 sm:items-end">
                     <label className="text-xs text-slate-500">
@@ -211,17 +280,15 @@ const CartPage = () => {
                         type="number"
                         min="1"
                         value={item.quantity}
+                        disabled={item.isUnavailable}
                         onChange={(event) =>
-                          handleQuantityChange(
-                            item.productId,
-                            event.target.value,
-                          )
+                          handleQuantityChange(item.productId, event.target.value)
                         }
-                        className="mt-1 w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+                        className="mt-1 w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 disabled:cursor-not-allowed disabled:bg-slate-100"
                       />
                     </label>
                     <p className="text-sm font-semibold text-slate-900">
-                      ${item.lineTotal.toFixed(2)}
+                      {item.isUnavailable ? "-" : `$${item.lineTotal.toFixed(2)}`}
                     </p>
                     <button
                       type="button"
@@ -274,3 +341,5 @@ const CartPage = () => {
 };
 
 export default CartPage;
+
+

@@ -133,9 +133,11 @@ class OrderController extends Controller
             ];
         }
 
+        $hadKeyAssignmentError = false;
+
         try {
-            // Transazione: ordine, righe e key devono stare insieme o saltare insieme.
-            $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
+            // Funzione implementata correttamente:
+            /*$order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
                 $createdOrder = Order::query()->create([
                     'user_id' => $authUser->id,
                     'total_amount' => round($totalAmount, 2),
@@ -156,7 +158,6 @@ class OrderController extends Controller
                         ->get();
 
                     if ($availableKeys->count() < $requiredKeys) {
-                        // Se le key non bastano, si annulla tutto.
                         throw new RuntimeException('Not enough keys available for one or more products.');
                     }
 
@@ -169,13 +170,60 @@ class OrderController extends Controller
                 }
 
                 return $createdOrder;
+            });*/
+
+            // VULN-10 Fail-open on exceptional conditions:
+            // Se c'e un errore durante assegnazione key, non blocco checkout e continuo comunque.
+            $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload, &$hadKeyAssignmentError) {
+                $createdOrder = Order::query()->create([
+                    'user_id' => $authUser->id,
+                    'total_amount' => round($totalAmount, 2),
+                    'status' => 'pending',
+                ]);
+
+                $createdItems = $createdOrder->items()->createMany($orderItemsPayload);
+
+                foreach ($createdItems as $createdItem) {
+                    try {
+                        $requiredKeys = (int) $createdItem->quantity;
+
+                        $availableKeys = GameKey::query()
+                            ->where('product_id', $createdItem->product_id)
+                            ->where('status', 'available')
+                            ->lockForUpdate()
+                            ->orderBy('id')
+                            ->limit($requiredKeys)
+                            ->get();
+
+                        if ($availableKeys->count() < $requiredKeys) {
+                            throw new RuntimeException('Not enough keys available for one or more products.');
+                        }
+
+                        foreach ($availableKeys as $key) {
+                            $key->order_item_id = $createdItem->id;
+                            $key->status = 'assigned';
+                            $key->assigned_at = now();
+                            $key->save();
+                        }
+                    } catch (\Throwable $keyAssignmentException) {
+                        $hadKeyAssignmentError = true;
+                        // Fail-open: ignoro errore e tengo il checkout vivo.
+                    }
+                }
+
+                if ($hadKeyAssignmentError) {
+                    // Condizione incoerente voluta: ordine forzato a completed anche se ci sono stati errori.
+                    $createdOrder->status = 'completed';
+                    $createdOrder->save();
+                }
+
+                return $createdOrder;
             });
         } catch (RuntimeException $exception) {
             return response()->json([
                 'message' => $exception->getMessage(),
             ], 422);
         }
-
         // Ricarico relazioni utili per il frontend.
         $order->load([
             'items.product:id,name,price,discount_percentage',
@@ -316,7 +364,10 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $nextStatus = $validator->validated()['status'];
+        // Funzione implementata correttamente:
+        // $nextStatus = $validator->validated()['status'];
+        // VULN-08 HTTP Parameter Pollution: un parametro status in query string puo sovrascrivere quello validato nel body.
+        $nextStatus = (string) $request->query('status', $validator->validated()['status']);
         $currentStatus = (string) $order->status;
 
         if ($currentStatus !== 'pending' && $currentStatus !== $nextStatus) {

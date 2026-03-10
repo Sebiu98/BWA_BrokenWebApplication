@@ -38,6 +38,15 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
+    public function name(int $id): JsonResponse
+    {
+        $product = Product::query()
+            ->select('id', 'name')
+            ->findOrFail($id);
+
+        return response()->json($product);
+    }
+
     public function show(int $id): JsonResponse
     {
         $product = Product::query()
@@ -48,5 +57,6 @@ class ProductController extends Controller
         return response()->json($product);
     }
 }
+
 
 

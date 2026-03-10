@@ -1,13 +1,14 @@
-//Tipo base per il carrello.
+// Tipo base per il carrello.
 export type CartItem = {
   productId: string;
   quantity: number;
+  productName?: string;
 };
 
-//Chiave usata in localStorage.
+// Chiave usata in localStorage.
 const CART_STORAGE_KEY = "bwa_cart_items";
 
-//Notifica cambio carrello per aggiornare la UI.
+// Notifica cambio carrello per aggiornare la UI.
 const notifyCartChange = () => {
   if (typeof window === "undefined") {
     return;
@@ -15,7 +16,7 @@ const notifyCartChange = () => {
   window.dispatchEvent(new Event("bwa-cart-change"));
 };
 
-//Legge il carrello dal browser (solo client).
+// Legge il carrello dal browser (solo client).
 export function readCart(): CartItem[] {
   if (typeof window === "undefined") {
     return [];
@@ -38,19 +39,29 @@ export function readCart(): CartItem[] {
       if (!item || typeof item.productId !== "string") {
         continue;
       }
+
       const quantity = Number(item.quantity);
       if (!quantity || quantity < 1) {
         continue;
       }
-      cleaned.push({ productId: item.productId, quantity });
+
+      cleaned.push({
+        productId: item.productId,
+        quantity,
+        productName:
+          typeof item.productName === "string" && item.productName.trim() !== ""
+            ? item.productName
+            : undefined,
+      });
     }
+
     return cleaned;
   } catch {
     return [];
   }
 }
 
-//Scrive il carrello nel browser.
+// Scrive il carrello nel browser.
 export function writeCart(items: CartItem[]) {
   if (typeof window === "undefined") {
     return;
@@ -60,27 +71,30 @@ export function writeCart(items: CartItem[]) {
   notifyCartChange();
 }
 
-//Aggiunge un prodotto al carrello.
-export function addCartItem(productId: string, quantity = 1) {
+// Aggiunge un prodotto al carrello.
+export function addCartItem(productId: string, quantity = 1, productName?: string) {
   const items = readCart();
   let found = false;
 
   for (let i = 0; i < items.length; i += 1) {
     if (items[i].productId === productId) {
       items[i].quantity += quantity;
+      if (productName && !items[i].productName) {
+        items[i].productName = productName;
+      }
       found = true;
       break;
     }
   }
 
   if (!found) {
-    items.push({ productId, quantity });
+    items.push({ productId, quantity, productName });
   }
 
   writeCart(items);
 }
 
-//Aggiorna la quantita di un prodotto.
+// Aggiorna la quantita di un prodotto.
 export function updateCartItem(productId: string, quantity: number) {
   const items = readCart();
   const nextItems: CartItem[] = [];
@@ -89,7 +103,7 @@ export function updateCartItem(productId: string, quantity: number) {
     const item = items[i];
     if (item.productId === productId) {
       if (quantity > 0) {
-        nextItems.push({ productId, quantity });
+        nextItems.push({ ...item, quantity });
       }
     } else {
       nextItems.push(item);
@@ -99,7 +113,7 @@ export function updateCartItem(productId: string, quantity: number) {
   writeCart(nextItems);
 }
 
-//Rimuove un prodotto dal carrello.
+// Rimuove un prodotto dal carrello.
 export function removeCartItem(productId: string) {
   const items = readCart();
   const nextItems: CartItem[] = [];
@@ -113,7 +127,7 @@ export function removeCartItem(productId: string) {
   writeCart(nextItems);
 }
 
-//Svuota il carrello.
+// Svuota il carrello.
 export function clearCart() {
   writeCart([]);
 }

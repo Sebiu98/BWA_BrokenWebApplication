@@ -86,7 +86,8 @@ const AddToCartButton = ({
 
   const handleClick = () => {
     //Per ora il carrello e locale: aggiungiamo item e apriamo il pannello.
-    addCartItem(productId, 1);
+    const productName = productsCatalog.find((item) => item.id === productId)?.name;
+    addCartItem(productId, 1, productName);
     setCartItems(readCart());
     setIsPanelOpen(true);
   };

@@ -241,6 +241,7 @@ const AdminOrdersPage = () => {
         isOpen={Boolean(selectedOrder)}
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
+        canViewKeys={false}
       />
     </main>
   );

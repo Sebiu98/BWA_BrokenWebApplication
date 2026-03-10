@@ -195,6 +195,34 @@ export const getApiProductById = async (
   return mapApiProductToCatalogProduct(product);
 };
 
+
+export const getApiProductNameById = async (
+  id: string,
+): Promise<string | null> => {
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}/products/${id}/name`, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+  } catch {
+    throw buildApiNetworkError();
+  }
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await buildApiRequestError(response);
+  }
+
+  const payload = (await response.json()) as { name?: string };
+  return typeof payload.name === "string" ? payload.name : null;
+};
 export type ApiAuthUser = {
   id: number;
   username: string;
@@ -582,4 +610,5 @@ export const deleteApiComment = async (
     },
   });
 };
+
 

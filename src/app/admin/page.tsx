@@ -233,12 +233,10 @@ const AdminPage = () => {
         isOpen={Boolean(selectedOrder)}
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
+        canViewKeys={false}
       />
     </main>
   );
 };
 
 export default AdminPage;
-
-
-
