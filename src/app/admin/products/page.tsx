@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -54,7 +54,7 @@ const toFormFromProduct = (product: ApiAdminProduct): ProductFormState => ({
 });
 
 const AdminProductsPage = () => {
-  const { user, session, isAdmin, isReady } = useAuth();
+  const { user, session, isReady } = useAuth();
 
   const [products, setProducts] = useState<ApiAdminProduct[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -68,10 +68,10 @@ const AdminProductsPage = () => {
   const [editForm, setEditForm] =
     useState<ProductFormState>(createInitialForm());
 
-  const canLoad = Boolean(session?.token && isAdmin);
+  const canLoad = Boolean(session?.token);
 
   useEffect(() => {
-    if (!session?.token || !isAdmin) {
+    if (!session?.token) {
       setProducts([]);
       setCategories([]);
       return;
@@ -106,7 +106,7 @@ const AdminProductsPage = () => {
     };
 
     void load();
-  }, [canLoad, isAdmin, session?.token]);
+  }, [canLoad, session?.token]);
 
   const categoryOptions = useMemo(() => {
     return categories.map((item) => ({
@@ -262,7 +262,7 @@ const AdminProductsPage = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -271,7 +271,7 @@ const AdminProductsPage = () => {
               Admin access required
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Only administrators can view this page.
+              Open this page while authenticated.
             </p>
             <Link
               href="/login?next=/admin/products"
@@ -494,13 +494,13 @@ const AdminProductsPage = () => {
                       {item.description}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      Base: ${Number(item.price).toFixed(2)} • Discount:{" "}
-                      {item.discount_percentage ?? 0}% • Final: $
+                      Base: ${Number(item.price).toFixed(2)} � Discount:{" "}
+                      {item.discount_percentage ?? 0}% � Final: $
                       {(
                         Number(item.price) *
                         (1 - Number(item.discount_percentage ?? 0) / 100)
                       ).toFixed(2)}{" "}
-                      • {item.category?.name ?? "Unknown category"}
+                      � {item.category?.name ?? "Unknown category"}
                     </p>
 
                     {isEditing ? (

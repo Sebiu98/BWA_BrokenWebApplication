@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -41,7 +41,7 @@ const formatApiError = (error: unknown, fallback: string): string => {
 };
 
 const AdminUsersPage = () => {
-  const { user, session, isAdmin, isReady } = useAuth();
+  const { user, session, isReady } = useAuth();
 
   const [users, setUsers] = useState<ApiAuthUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,10 +51,10 @@ const AdminUsersPage = () => {
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<UserFormState | null>(null);
 
-  const canLoad = Boolean(session?.token && isAdmin);
+  const canLoad = Boolean(session?.token);
 
   useEffect(() => {
-    if (!session?.token || !isAdmin) {
+    if (!session?.token) {
       setUsers([]);
       return;
     }
@@ -77,7 +77,7 @@ const AdminUsersPage = () => {
     if (canLoad) {
       void load();
     }
-  }, [canLoad, isAdmin, session?.token]);
+  }, [canLoad, session?.token]);
 
   const activeAdminsCount = useMemo(() => {
     return users.filter(
@@ -191,7 +191,7 @@ const AdminUsersPage = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -200,7 +200,7 @@ const AdminUsersPage = () => {
               Admin access required
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Only administrators can view this page.
+              Open this page while authenticated.
             </p>
             <Link
               href="/login?next=/admin/users"

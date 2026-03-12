@@ -15,7 +15,7 @@ import {
 //Lista ordini admin.
 const AdminOrdersPage = () => {
   //Dati utente dalla sessione.
-  const { user, session, isAdmin, isReady } = useAuth();
+  const { user, session, isReady } = useAuth();
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [isOrdersReady, setIsOrdersReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,7 +25,7 @@ const AdminOrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   useEffect(() => {
     const loadOrders = async () => {
-      if (!session?.token || !isAdmin) {
+      if (!session?.token) {
         setOrders([]);
         setIsOrdersReady(true);
         return;
@@ -42,7 +42,7 @@ const AdminOrdersPage = () => {
     };
 
     void loadOrders();
-  }, [isAdmin, session?.token]);
+  }, [session?.token]);
 
   const toErrorMessage = (error: unknown, fallback: string) => {
     if (error instanceof ApiRequestError) {
@@ -95,7 +95,7 @@ const AdminOrdersPage = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -104,7 +104,7 @@ const AdminOrdersPage = () => {
               Admin access required
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Only administrators can view this page.
+              Open this page while authenticated.
             </p>
             <Link
               href="/login?next=/admin/orders"

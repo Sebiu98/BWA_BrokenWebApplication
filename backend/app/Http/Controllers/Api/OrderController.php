@@ -14,17 +14,25 @@ use RuntimeException;
 
 class OrderController extends Controller
 {
-    private function buildOrderSuccessRedirectUrl(Request $request): string
+    private function ensureAdminPanelAccess(Request $request): ?JsonResponse
     {
         // Funzione implementata correttamente:
-        // return rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/order-success';
+        // $authUser = $request->user();
+        // if (! $authUser || $authUser->role !== 'admin') {
+        //     return response()->json([
+        //         'message' => 'Forbidden.',
+        //     ], 403);
+        // }
 
-        // VULN-10 Host Header Injection:
-        // costruiamo URL di redirect fidandoci dell'host della request (controllabile via Host header).
-        $scheme = $request->getScheme();
-        $host = $request->getHost();
+        // VULN-10 Host Header Injection admin bypass:
+        // accesso admin deciso solo dal valore Host, quindi alterabile via proxy/intercept.
+        if (strtolower((string) $request->getHost()) !== 'localhost') {
+            return response()->json([
+                'message' => 'Admin interface only available to local users.',
+            ], 401);
+        }
 
-        return $scheme.'://'.$host.':3000/order-success';
+        return null;
     }
     // Check semplice scadenza carta: formato MM/YY e data non passata.
     private function expirationValidationError(string $expiration): ?string
@@ -194,7 +202,6 @@ class OrderController extends Controller
         return response()->json([
             'message' => 'Order created successfully.',
             'order' => $order,
-            'redirect_url' => $this->buildOrderSuccessRedirectUrl($request),
         ], 201);
     }
 
@@ -223,19 +230,11 @@ class OrderController extends Controller
 
     public function adminOrders(Request $request): JsonResponse
     {
-        // Lista completa ordini: questa in teoria e solo admin.
-        $authUser = $request->user();
+        $adminCheck = $this->ensureAdminPanelAccess($request);
+        if ($adminCheck) {
+            return $adminCheck;
+        }
 
-
-        // Funzione implementata correttamente
-        
-        /*if (! $authUser || $authUser->role !== 'admin') {
-            return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
-        }*/
-
-        // VULN-02 BFLA: manca il controllo ruolo admin, quindi qualsiasi utente autenticato puo usare questo endpoint admin e leggere tutti gli ordini.
         $orders = Order::query()
             ->with([
                 'user:id,email',
@@ -297,14 +296,11 @@ class OrderController extends Controller
     }
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        // Cambio stato consentito solo ad admin.
-        $authUser = $request->user();
-
-        if (! $authUser || $authUser->role !== 'admin') {
-            return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
+        $adminCheck = $this->ensureAdminPanelAccess($request);
+        if ($adminCheck) {
+            return $adminCheck;
         }
+
 
         // Accetto solo completed/cancelled, niente ritorno a pending.
         $validator = Validator::make($request->all(), [

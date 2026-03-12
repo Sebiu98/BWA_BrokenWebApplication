@@ -563,9 +563,9 @@ export const updateApiOrderStatus = async (
 export const createApiOrder = async (
   token: string,
   payload: CreateOrderPayload,
- ): Promise<{ message: string; order: ApiOrder; redirect_url?: string }> => {
+ ): Promise<{ message: string; order: ApiOrder }> => {
   // Checkout: il backend ricontrolla tutto e crea l'ordine.
-  return fetchJson<{ message: string; order: ApiOrder; redirect_url?: string }>("/orders", {
+  return fetchJson<{ message: string; order: ApiOrder }>("/orders", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

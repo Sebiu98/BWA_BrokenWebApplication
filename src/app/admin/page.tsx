@@ -5,6 +5,7 @@ import Link from "next/link";
 import MaxWidthWrapper from "../components/MaxWidthWrapper";
 import OrderDetailsModal from "../components/OrderDetailsModal";
 import {
+  ApiRequestError,
   getApiAdminOrders,
   getApiAdminProducts,
   getApiUsers,
@@ -12,46 +13,62 @@ import {
 } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 
-//Dashboard admin con dati letti da API.
+const toErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof ApiRequestError) {
+    return error.message || fallback;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
+
+// Dashboard admin con dati letti da API.
 const AdminPage = () => {
-  //Dati utente dalla sessione.
-  const { user, session, isAdmin, isReady } = useAuth();
+  const { user, session, isReady } = useAuth();
   const [productsCount, setProductsCount] = useState(0);
   const [usersCount, setUsersCount] = useState(0);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
-  const [isProductsReady, setIsProductsReady] = useState(false);
+  const [isPageReady, setIsPageReady] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      setIsPageReady(false);
+      setErrorMessage("");
+
+      if (!session?.token) {
+        setProductsCount(0);
+        setUsersCount(0);
+        setOrders([]);
+        setIsPageReady(true);
+        return;
+      }
+
       try {
         const [products, users, adminOrders] = await Promise.all([
-          session?.token && isAdmin
-            ? getApiAdminProducts(session.token)
-            : Promise.resolve([]),
-          session?.token && isAdmin
-            ? getApiUsers(session.token)
-            : Promise.resolve([]),
-          session?.token && isAdmin
-            ? getApiAdminOrders(session.token)
-            : Promise.resolve([]),
+          getApiAdminProducts(session.token),
+          getApiUsers(session.token),
+          getApiAdminOrders(session.token),
         ]);
         setProductsCount(products.length);
         setUsersCount(users.length);
         setOrders(adminOrders);
-      } catch {
+      } catch (error) {
         setProductsCount(0);
         setUsersCount(0);
         setOrders([]);
+        setErrorMessage(toErrorMessage(error, "Unable to load admin data."));
       } finally {
-        setIsProductsReady(true);
+        setIsPageReady(true);
       }
     };
 
     void loadDashboardData();
-  }, [isAdmin, session?.token]);
+  }, [session?.token]);
 
-  if (!isReady || !isProductsReady) {
+  if (!isReady || !isPageReady) {
     return (
       <main className="bg-slate-50">
         <MaxWidthWrapper className="pb-24 pt-8">
@@ -67,13 +84,13 @@ const AdminPage = () => {
         <MaxWidthWrapper className="pb-24 pt-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <h1 className="text-2xl font-semibold text-slate-900">
-              Admin access required
+              Admin access requires login
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Please sign in with an admin account to continue.
+              Sign in first, then open the admin area.
             </p>
             <Link
-              href="/login"
+              href="/login?next=/admin"
               className="mt-6 inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
             >
               Go to login
@@ -84,30 +101,6 @@ const AdminPage = () => {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <main className="bg-slate-50">
-        <MaxWidthWrapper className="pb-24 pt-8">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h1 className="text-2xl font-semibold text-slate-900">
-              Access denied
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Your account does not have admin permissions.
-            </p>
-            <Link
-              href="/products"
-              className="mt-6 inline-flex rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            >
-              Back to catalog
-            </Link>
-          </div>
-        </MaxWidthWrapper>
-      </main>
-    );
-  }
-
-  //Calcola dati principali.
   let totalRevenue = 0;
   for (let i = 0; i < orders.length; i += 1) {
     if (orders[i].status !== "completed") {
@@ -123,65 +116,7 @@ const AdminPage = () => {
     { label: "Revenue", value: "$" + totalRevenue.toFixed(2) },
   ];
 
-  const statCards = [];
-  for (let i = 0; i < stats.length; i += 1) {
-    const stat = stats[i];
-    statCards.push(
-      <div
-        key={stat.label}
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-      >
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-          {stat.label}
-        </p>
-        <p className="mt-2 text-2xl font-semibold text-slate-900">
-          {stat.value}
-        </p>
-      </div>,
-    );
-  }
-
-  //Ordini recenti.
-  const recentOrders = [];
-  for (let i = 0; i < orders.length && i < 3; i += 1) {
-    recentOrders.push(orders[i]);
-  }
-
-  const orderCards = [];
-  for (let i = 0; i < recentOrders.length; i += 1) {
-    const order = recentOrders[i];
-    orderCards.push(
-      <div
-        key={order.id}
-        className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-      >
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>Order ord-{order.id}</span>
-          <span>{order.status}</span>
-        </div>
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>{order.user?.email ?? "-"}</span>
-          <span className="font-semibold text-slate-900">
-            ${Number(order.total_amount).toFixed(2)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>
-            {order.created_at
-              ? new Date(order.created_at).toLocaleDateString()
-              : "-"}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedOrder(order)}
-            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            View details
-          </button>
-        </div>
-      </div>,
-    );
-  }
+  const recentOrders = orders.slice(0, 3);
 
   return (
     <main className="bg-slate-50">
@@ -194,6 +129,12 @@ const AdminPage = () => {
             Monitor users, orders, and catalog activity from one place.
           </p>
         </div>
+
+        {errorMessage ? (
+          <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {errorMessage}
+          </div>
+        ) : null}
 
         <div className="mt-6 flex flex-wrap gap-2 text-sm">
           <Link
@@ -217,15 +158,55 @@ const AdminPage = () => {
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards}
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            >
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                {stat.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {stat.value}
+              </p>
+            </div>
+          ))}
         </div>
 
         <section className="mt-12">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Recent orders
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900">Recent orders</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {orderCards}
+            {recentOrders.map((order) => (
+              <div
+                key={order.id}
+                className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>Order ord-{order.id}</span>
+                  <span>{order.status}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>{order.user?.email ?? "-"}</span>
+                  <span className="font-semibold text-slate-900">
+                    ${Number(order.total_amount).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                  <span>
+                    {order.created_at
+                      ? new Date(order.created_at).toLocaleDateString()
+                      : "-"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrder(order)}
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    View details
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </MaxWidthWrapper>

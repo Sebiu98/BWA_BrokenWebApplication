@@ -23,10 +23,25 @@ class UserController extends Controller
     {
         $authUser = $request->user();
 
-        if (! $authUser || $authUser->role !== 'admin') {
+        if (! $authUser) {
             return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        // Funzione implementata correttamente:
+        // if ($authUser->role !== 'admin') {
+        //     return response()->json([
+        //         'message' => 'Forbidden.',
+        //     ], 403);
+        // }
+
+        // VULN-10 Host Header Injection admin bypass:
+        // trustiamo Host per decidere accesso admin locale.
+        if (strtolower((string) $request->getHost()) !== 'localhost') {
+            return response()->json([
+                'message' => 'Admin interface only available to local users.',
+            ], 401);
         }
 
         return null;
