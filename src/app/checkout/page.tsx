@@ -179,8 +179,15 @@ const CheckoutPage = () => {
       const createdOrderId = createdOrder.id;
       clearCart();
       setCartItems([]);
-      window.localStorage.setItem("bwa_last_order_id", String(createdOrderId));
-      router.push("/order-success");
+            window.localStorage.setItem("bwa_last_order_id", String(createdOrderId));
+
+      const redirectUrl = response.redirect_url || "/order-success";
+      if (redirectUrl.startsWith("http://") || redirectUrl.startsWith("https://")) {
+        window.location.assign(redirectUrl);
+        return;
+      }
+
+      router.push(redirectUrl);
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(error.message);

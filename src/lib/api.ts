@@ -546,7 +546,7 @@ export const updateApiOrderStatus = async (
   token: string,
   orderId: number,
   status: "completed" | "cancelled",
-): Promise<{ message: string; order: ApiOrder }> => {
+ ): Promise<{ message: string; order: ApiOrder }> => {
   return fetchJson<{ message: string; order: ApiOrder }>(
     `/orders/${orderId}/status`,
     {
@@ -563,9 +563,9 @@ export const updateApiOrderStatus = async (
 export const createApiOrder = async (
   token: string,
   payload: CreateOrderPayload,
-): Promise<{ message: string; order: ApiOrder }> => {
+ ): Promise<{ message: string; order: ApiOrder; redirect_url?: string }> => {
   // Checkout: il backend ricontrolla tutto e crea l'ordine.
-  return fetchJson<{ message: string; order: ApiOrder }>("/orders", {
+  return fetchJson<{ message: string; order: ApiOrder; redirect_url?: string }>("/orders", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

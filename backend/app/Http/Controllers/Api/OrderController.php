@@ -14,6 +14,18 @@ use RuntimeException;
 
 class OrderController extends Controller
 {
+    private function buildOrderSuccessRedirectUrl(Request $request): string
+    {
+        // Funzione implementata correttamente:
+        // return rtrim((string) config('app.frontend_url', 'http://localhost:3000'), '/') . '/order-success';
+
+        // VULN-10 Host Header Injection:
+        // costruiamo URL di redirect fidandoci dell'host della request (controllabile via Host header).
+        $scheme = $request->getScheme();
+        $host = $request->getHost();
+
+        return $scheme.'://'.$host.':3000/order-success';
+    }
     // Check semplice scadenza carta: formato MM/YY e data non passata.
     private function expirationValidationError(string $expiration): ?string
     {
@@ -133,11 +145,8 @@ class OrderController extends Controller
             ];
         }
 
-        $hadKeyAssignmentError = false;
-
         try {
-            // Funzione implementata correttamente:
-            /*$order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
+            $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload) {
                 $createdOrder = Order::query()->create([
                     'user_id' => $authUser->id,
                     'total_amount' => round($totalAmount, 2),
@@ -170,54 +179,6 @@ class OrderController extends Controller
                 }
 
                 return $createdOrder;
-            });*/
-
-            // VULN-10 Fail-open on exceptional conditions:
-            // Se c'e un errore durante assegnazione key, non blocco checkout e continuo comunque.
-            $order = DB::transaction(function () use ($authUser, $totalAmount, $orderItemsPayload, &$hadKeyAssignmentError) {
-                $createdOrder = Order::query()->create([
-                    'user_id' => $authUser->id,
-                    'total_amount' => round($totalAmount, 2),
-                    'status' => 'pending',
-                ]);
-
-                $createdItems = $createdOrder->items()->createMany($orderItemsPayload);
-
-                foreach ($createdItems as $createdItem) {
-                    try {
-                        $requiredKeys = (int) $createdItem->quantity;
-
-                        $availableKeys = GameKey::query()
-                            ->where('product_id', $createdItem->product_id)
-                            ->where('status', 'available')
-                            ->lockForUpdate()
-                            ->orderBy('id')
-                            ->limit($requiredKeys)
-                            ->get();
-
-                        if ($availableKeys->count() < $requiredKeys) {
-                            throw new RuntimeException('Not enough keys available for one or more products.');
-                        }
-
-                        foreach ($availableKeys as $key) {
-                            $key->order_item_id = $createdItem->id;
-                            $key->status = 'assigned';
-                            $key->assigned_at = now();
-                            $key->save();
-                        }
-                    } catch (\Throwable $keyAssignmentException) {
-                        $hadKeyAssignmentError = true;
-                        // Fail-open: ignoro errore e tengo il checkout vivo.
-                    }
-                }
-
-                if ($hadKeyAssignmentError) {
-                    // Condizione incoerente voluta: ordine forzato a completed anche se ci sono stati errori.
-                    $createdOrder->status = 'completed';
-                    $createdOrder->save();
-                }
-
-                return $createdOrder;
             });
         } catch (RuntimeException $exception) {
             return response()->json([
@@ -233,6 +194,7 @@ class OrderController extends Controller
         return response()->json([
             'message' => 'Order created successfully.',
             'order' => $order,
+            'redirect_url' => $this->buildOrderSuccessRedirectUrl($request),
         ], 201);
     }
 
