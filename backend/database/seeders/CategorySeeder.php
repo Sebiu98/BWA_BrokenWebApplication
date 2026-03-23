@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
@@ -12,22 +11,6 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        $categories = [
-            ['name' => 'Action'],
-            ['name' => 'MMO'],
-            ['name' => 'RPG'],
-            ['name' => 'Adventure'],
-            ['name' => 'Racing'],
-            ['name' => 'Shooter'],
-            ['name' => 'Stealth'],
-            ['name' => 'Strategy'],
-        ];
-
-        foreach ($categories as $category) {
-            Category::updateOrCreate(
-                ['name' => $category['name']],
-                $category
-            );
-        }
+        // Intenzionalmente vuoto: popolamento gestito manualmente.
     }
 }

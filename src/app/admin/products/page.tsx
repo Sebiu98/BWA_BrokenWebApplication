@@ -31,7 +31,7 @@ const createInitialForm = (): ProductFormState => ({
   price: "",
   discount_percentage: "0",
   category_id: "",
-  is_enabled: true,
+  is_enabled: false,
 });
 
 const formatApiError = (error: unknown, fallback: string): string => {
@@ -132,7 +132,6 @@ const AdminProductsPage = () => {
         price: Number(createForm.price),
         discount_percentage: Number(createForm.discount_percentage),
         category_id: Number(createForm.category_id),
-        is_enabled: createForm.is_enabled,
       });
 
       setProducts((prev) => [...prev, created.product]);
@@ -425,19 +424,10 @@ const AdminProductsPage = () => {
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 pt-7 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={createForm.is_enabled}
-                onChange={(event) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    is_enabled: event.target.checked,
-                  }))
-                }
-              />
-              Visible to users
-            </label>
+            <p className="pt-7 text-sm text-slate-600">
+              New products are created as <span className="font-semibold">Disabled</span>.
+              Enable them after adding game keys.
+            </p>
             <div className="md:col-span-2">
               <button
                 type="submit"
@@ -494,13 +484,15 @@ const AdminProductsPage = () => {
                       {item.description}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">
-                      Base: ${Number(item.price).toFixed(2)} � Discount:{" "}
-                      {item.discount_percentage ?? 0}% � Final: $
+                      Base: ${Number(item.price).toFixed(2)} | Discount:{" "}
+                      {item.discount_percentage ?? 0}% | Final: $
                       {(
                         Number(item.price) *
                         (1 - Number(item.discount_percentage ?? 0) / 100)
-                      ).toFixed(2)}{" "}
-                      � {item.category?.name ?? "Unknown category"}
+                      ).toFixed(2)}{" "} | {item.category?.name ?? "Unknown category"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Keys available: {item.available_keys_count ?? 0}
                     </p>
 
                     {isEditing ? (

@@ -11,13 +11,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            CategorySeeder::class,
-            ProductSeeder::class,
-            UserSeeder::class,
-            GameKeySeeder::class,
-            OrderSeeder::class,
-            CommentSeeder::class,
-        ]);
+        // Intenzionalmente vuoto: nessun dato iniziale hardcoded.
     }
 }

@@ -65,6 +65,8 @@ export type ApiAdminProduct = {
   price: number | string;
   discount_percentage: number;
   is_enabled: boolean;
+  total_keys_count?: number;
+  available_keys_count?: number;
   created_at?: string;
   updated_at?: string;
   category?: ApiCategory;

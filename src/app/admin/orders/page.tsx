@@ -53,7 +53,37 @@ const AdminOrdersPage = () => {
     }
     return fallback;
   };
+  const getStatusPriority = (status: string): number => {
+    if (status === "pending") {
+      return 0;
+    }
 
+    if (status === "completed") {
+      return 1;
+    }
+
+    if (status === "cancelled") {
+      return 2;
+    }
+
+    return 3;
+  };
+
+  const getStatusBadgeClassName = (status: string): string => {
+    if (status === "completed") {
+      return "rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700";
+    }
+
+    if (status === "pending") {
+      return "rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700";
+    }
+
+    if (status === "cancelled") {
+      return "rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700";
+    }
+
+    return "rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700";
+  };
   const handleUpdateStatus = async (
     orderId: number,
     status: "completed" | "cancelled",
@@ -118,15 +148,34 @@ const AdminOrdersPage = () => {
     );
   }
 
+  const sortedOrders = [...orders].sort((left, right) => {
+    const priorityDiff =
+      getStatusPriority(left.status) - getStatusPriority(right.status);
+
+    if (priorityDiff !== 0) {
+      return priorityDiff;
+    }
+
+    const leftTime = left.created_at ? new Date(left.created_at).getTime() : 0;
+    const rightTime = right.created_at ? new Date(right.created_at).getTime() : 0;
+
+    if (leftTime !== rightTime) {
+      return rightTime - leftTime;
+    }
+
+    return right.id - left.id;
+  });
+
   const orderCards = [];
-  for (let i = 0; i < orders.length; i += 1) {
-    const order = orders[i];
+  for (let i = 0; i < sortedOrders.length; i += 1) {
+    const order = sortedOrders[i];
     const isPending = order.status === "pending";
     const isUpdatingCurrentOrder = isSaving && updatingOrderId === order.id;
     const orderDate = order.created_at
       ? new Date(order.created_at).toLocaleDateString()
       : "-";
     const total = Number(order.total_amount);
+    const statusBadgeClassName = getStatusBadgeClassName(order.status);
     orderCards.push(
       <div
         key={order.id}
@@ -134,7 +183,7 @@ const AdminOrdersPage = () => {
       >
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
           <span>Order ord-{order.id}</span>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+          <span className={statusBadgeClassName}>
             {order.status}
           </span>
         </div>

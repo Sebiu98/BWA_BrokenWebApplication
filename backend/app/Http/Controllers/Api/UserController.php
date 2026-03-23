@@ -37,7 +37,7 @@ class UserController extends Controller
         // }
 
         // VULN-10 Host Header Injection admin bypass:
-        // trustiamo Host per decidere accesso admin locale.
+        // trustiamo Host per decidere accesso admin locale (loopback IP).
         if (strtolower((string) $request->getHost()) !== 'localhost') {
             return response()->json([
                 'message' => 'Admin interface only available to local users.',

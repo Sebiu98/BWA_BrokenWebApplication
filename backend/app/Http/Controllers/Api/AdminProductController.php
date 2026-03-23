@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\GameKey;
 use App\Models\Product;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -13,38 +12,29 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminProductController extends Controller
 {
-    private function randomKeyValue(): string
+    private function adminProductBaseQuery()
     {
-        $raw = strtoupper(bin2hex(random_bytes(10)));
-
-        return implode('-', [
-            substr($raw, 0, 5),
-            substr($raw, 5, 5),
-            substr($raw, 10, 5),
-            substr($raw, 15, 5),
-        ]);
+        return Product::query()
+            ->with('category')
+            ->withCount([
+                'gameKeys as total_keys_count',
+                'gameKeys as available_keys_count' => function ($query) {
+                    $query->where('status', 'available');
+                },
+            ]);
     }
 
-    private function createInitialKeys(Product $product, int $count = 10): void
+    private function loadAdminProduct(Product $product): Product
     {
-        $generated = [];
+        $product->load('category');
+        $product->loadCount([
+            'gameKeys as total_keys_count',
+            'gameKeys as available_keys_count' => function ($query) {
+                $query->where('status', 'available');
+            },
+        ]);
 
-        for ($i = 0; $i < $count; $i += 1) {
-            do {
-                $candidate = $this->randomKeyValue();
-            } while (
-                isset($generated[$candidate]) ||
-                GameKey::query()->where('key_value', $candidate)->exists()
-            );
-
-            $generated[$candidate] = true;
-
-            GameKey::query()->create([
-                'product_id' => $product->id,
-                'key_value' => $candidate,
-                'status' => 'available',
-            ]);
-        }
+        return $product;
     }
 
     private function ensureAdmin(Request $request): ?JsonResponse
@@ -82,8 +72,7 @@ class AdminProductController extends Controller
             return $adminCheck;
         }
 
-        $products = Product::query()
-            ->with('category')
+        $products = $this->adminProductBaseQuery()
             ->orderBy('id')
             ->get();
 
@@ -117,17 +106,11 @@ class AdminProductController extends Controller
         $validated['discount_percentage'] = array_key_exists('discount_percentage', $validated)
             ? (int) $validated['discount_percentage']
             : 0;
-        $validated['is_enabled'] = array_key_exists('is_enabled', $validated)
-            ? (bool) $validated['is_enabled']
-            : true;
+        // Nuovi prodotti nascono disabilitati; verranno attivati solo dopo il caricamento key.
+        $validated['is_enabled'] = false;
 
-        $product = DB::transaction(function () use ($validated) {
-            $createdProduct = Product::query()->create($validated);
-            $this->createInitialKeys($createdProduct, 10);
-
-            return $createdProduct;
-        });
-        $product->load('category');
+        $product = Product::query()->create($validated);
+        $product = $this->loadAdminProduct($product);
 
         return response()->json([
             'message' => 'Product created successfully.',
@@ -167,7 +150,7 @@ class AdminProductController extends Controller
 
         $validated = $validator->validated();
         $product->update($validated);
-        $product->load('category');
+        $product = $this->loadAdminProduct($product);
 
         return response()->json([
             'message' => 'Product updated successfully.',
@@ -191,7 +174,7 @@ class AdminProductController extends Controller
 
         $product->is_enabled = ! $product->is_enabled;
         $product->save();
-        $product->load('category');
+        $product = $this->loadAdminProduct($product);
 
         return response()->json([
             'message' => 'Product availability updated successfully.',
