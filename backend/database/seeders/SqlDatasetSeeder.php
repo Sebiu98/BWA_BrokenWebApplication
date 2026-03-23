@@ -15,7 +15,6 @@ class SqlDatasetSeeder extends Seeder
             return;
         }
 
-        // Avoid duplicates when AUTO_SEED runs on every container start.
         if (DB::table('users')->exists() || DB::table('products')->exists() || DB::table('orders')->exists()) {
             return;
         }
@@ -26,51 +25,43 @@ class SqlDatasetSeeder extends Seeder
             return;
         }
 
-        $lines = preg_split('/\R/', $sql) ?: [];
-        $filtered = [];
-
-        foreach ($lines as $line) {
-            $trimmed = trim($line);
-
-            if ($trimmed === '' || str_starts_with($trimmed, '--')) {
-                continue;
-            }
-
-            // Skip psql client meta-commands.
-            if (str_starts_with($trimmed, '\\')) {
-                continue;
-            }
-
-            // Skip session-level statements that are not needed for app seeding.
-            if (preg_match('/^(SET|SELECT\s+pg_catalog\.set_config|SET\s+SESSION\s+AUTHORIZATION)\b/i', $trimmed)) {
-                continue;
-            }
-
-            // Trigger toggling requires elevated privileges and is not needed with ordered inserts.
-            if (preg_match('/^ALTER\s+TABLE\s+.+\s+(DISABLE|ENABLE)\s+TRIGGER\s+ALL\s*;?$/i', $trimmed)) {
-                continue;
-            }
-
-            $filtered[] = $line;
+        // Normalize encoding/newlines for cross-platform dumps (Windows -> Linux).
+        if (str_starts_with($sql, "\xEF\xBB\xBF")) {
+            $sql = substr($sql, 3);
         }
 
-        $cleanSql = implode("\n", $filtered);
+        if (!mb_check_encoding($sql, 'UTF-8')) {
+            $converted = @mb_convert_encoding($sql, 'UTF-8', 'UTF-16LE,UTF-16BE,UTF-8');
+            if (is_string($converted) && $converted !== '') {
+                $sql = $converted;
+            }
+        }
 
-        if (trim($cleanSql) === '') {
+        $sql = str_replace("\0", '', $sql);
+        $sql = str_replace(["\r\n", "\r"], "\n", $sql);
+
+        $lines = preg_split('/\n/', $sql) ?: [];
+        $statements = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '--') || str_starts_with($line, '\\')) {
+                continue;
+            }
+
+            if (preg_match('/^(INSERT\s+INTO\s+public\.|SELECT\s+pg_catalog\.setval\()/i', $line)) {
+                $statements[] = $line;
+            }
+        }
+
+        if ($statements === []) {
             return;
         }
 
-        $statements = preg_split('/;\s*(?:\r?\n|$)/', $cleanSql) ?: [];
-
         DB::transaction(function () use ($statements): void {
             foreach ($statements as $statement) {
-                $statement = trim($statement);
-
-                if ($statement === '') {
-                    continue;
-                }
-
-                DB::unprepared($statement.';');
+                DB::unprepared($statement);
             }
         });
     }
