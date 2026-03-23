@@ -21,7 +21,7 @@ COPY . .
 WORKDIR /app/backend
 RUN composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+ARG NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV NODE_ENV=production
 
