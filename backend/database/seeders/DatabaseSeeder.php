@@ -11,6 +11,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Intenzionalmente vuoto: nessun dato iniziale hardcoded.
+        $this->call([
+            SqlDatasetSeeder::class,
+        ]);
     }
 }

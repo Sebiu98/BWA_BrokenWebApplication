@@ -1,6 +1,6 @@
 ﻿services:
   webapp:
-    image: ${BWA_WEBAPP_IMAGE:-ghcr.io/your-org/bwa-webapp:1.0.0}
+    image: ${BWA_WEBAPP_IMAGE:-sebiu98/bwa-webapp:1.0.0}
     depends_on:
       database:
         condition: service_healthy
@@ -8,7 +8,7 @@
       APP_ENV: ${APP_ENV:-local}
       APP_DEBUG: ${APP_DEBUG:-true}
       APP_URL: ${APP_URL:-http://localhost:8000}
-      APP_KEY: ${APP_KEY:?Set APP_KEY in .env}
+      APP_KEY: ${APP_KEY:?APP_KEY is required}
 
       DB_CONNECTION: ${DB_CONNECTION:-pgsql}
       DB_HOST: ${DB_HOST:-database}
@@ -24,12 +24,12 @@
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
 
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-120}
 
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://127.0.0.1:8000/api}
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
-      AUTO_SEED: ${AUTO_SEED:-false}
+      AUTO_SEED: ${AUTO_SEED:-true}
     ports:
       - "${WEBAPP_FRONTEND_PORT:-3000}:3000"
       - "${WEBAPP_BACKEND_PORT:-8000}:8000"
@@ -54,3 +54,5 @@
 
 volumes:
   bwa_db_data:
+
+
