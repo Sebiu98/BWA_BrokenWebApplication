@@ -27,15 +27,18 @@ const AdminOrdersPage = () => {
     const loadOrders = async () => {
       if (!session?.token) {
         setOrders([]);
+        setErrorMessage("");
         setIsOrdersReady(true);
         return;
       }
 
       try {
+        setErrorMessage("");
         const apiOrders = await getApiAdminOrders(session.token);
         setOrders(apiOrders);
-      } catch {
+      } catch (error) {
         setOrders([]);
+        setErrorMessage(toErrorMessage(error, "Failed to load admin orders."));
       } finally {
         setIsOrdersReady(true);
       }
@@ -276,7 +279,7 @@ const AdminOrdersPage = () => {
           </div>
         ) : null}
 
-        {orders.length === 0 ? (
+        {orders.length === 0 && !errorMessage ? (
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
             No orders found.
           </div>
