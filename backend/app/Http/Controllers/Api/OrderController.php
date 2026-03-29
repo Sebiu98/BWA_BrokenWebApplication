@@ -304,22 +304,11 @@ class OrderController extends Controller
     }
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        $adminCheck = $this->ensureAdminRole($request);
-        if ($adminCheck) {
-            return $adminCheck;
-        }
-
-
-        // Accetto solo completed/cancelled, niente ritorno a pending.
-        $validator = Validator::make($request->all(), [
-            'status' => ['required', 'in:completed,cancelled'],
-        ]);
-
-        if ($validator->fails()) {
+        $authUser = $request->user();
+        if (! $authUser) {
             return response()->json([
-                'message' => 'Validation failed.',
-                'errors' => $validator->errors(),
-            ], 422);
+                'message' => 'Unauthorized.',
+            ], 401);
         }
 
         $order = Order::query()->find($id);
@@ -330,9 +319,32 @@ class OrderController extends Controller
             ], 404);
         }
 
+        // Regola prevista: admin puo impostare completed/cancelled su tutti, user puo aggiornare solo i propri ordini.
+        if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
+        }
+
+        $allowedStatuses = $authUser->role === 'admin'
+            ? 'completed,cancelled'
+            : 'completed';
+
+        // Validazione su body secondo il ruolo.
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', 'in:' . $allowedStatuses],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // VULN-08 HTTP Parameter Pollution: un parametro status in query string puo sovrascrivere quello validato nel body.
         // Funzione implementata correttamente:
         // $nextStatus = $validator->validated()['status'];
-        // VULN-08 HTTP Parameter Pollution: un parametro status in query string puo sovrascrivere quello validato nel body.
         $nextStatus = (string) $request->query('status', $validator->validated()['status']);
         $currentStatus = (string) $order->status;
 
