@@ -346,6 +346,7 @@ export type AdminUpdateUserPayload = {
   role: "user" | "admin";
 };
 
+
 export const registerApiAuth = async (
   payload: RegisterPayload,
 ): Promise<ApiAuthResponse> => {
@@ -371,6 +372,8 @@ export const loginApiAuth = async (
     body: JSON.stringify(payload),
   });
 };
+
+
 
 export const meApiAuth = async (token: string): Promise<ApiAuthUser> => {
   // Il client usa questo endpoint per capire se il token e ancora valido.
@@ -614,3 +617,26 @@ export const deleteApiComment = async (
 };
 
 
+
+
+export type ProfileUpdatePayload = {
+  username?: string;
+  email?: string;
+  current_password?: string;
+  password?: string;
+  password_confirmation?: string;
+};
+
+export const updateApiProfile = async (
+  token: string,
+  payload: ProfileUpdatePayload,
+): Promise<{ message: string; user: ApiAuthUser }> => {
+  return fetchJson<{ message: string; user: ApiAuthUser }>("/profile", {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+};

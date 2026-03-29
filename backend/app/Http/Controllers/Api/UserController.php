@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -47,6 +48,66 @@ class UserController extends Controller
         return null;
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $authUser = $request->user();
+        if (! $authUser) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'username' => ['sometimes', 'required', 'string', 'max:255', 'unique:users,username,' . $authUser->id],
+            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users,email,' . $authUser->id],
+            'current_password' => ['required_with:password', 'string'],
+            'password' => ['sometimes', 'required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
+        $hasProfileFields = array_key_exists('username', $validated) || array_key_exists('email', $validated) || array_key_exists('password', $validated);
+
+        if (! $hasProfileFields) {
+            return response()->json([
+                'message' => 'No profile fields provided.',
+            ], 422);
+        }
+
+        if (array_key_exists('password', $validated)) {
+            if (! Hash::check((string) ($validated['current_password'] ?? ''), (string) $authUser->password)) {
+                return response()->json([
+                    'message' => 'Validation failed.',
+                    'errors' => [
+                        'current_password' => ['Current password is incorrect.'],
+                    ],
+                ], 422);
+            }
+
+            $authUser->password = Hash::make((string) $validated['password']);
+        }
+
+        if (array_key_exists('username', $validated)) {
+            $authUser->username = (string) $validated['username'];
+        }
+
+        if (array_key_exists('email', $validated)) {
+            $authUser->email = (string) $validated['email'];
+        }
+
+        $authUser->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $authUser->fresh(),
+        ]);
+    }
     public function index(Request $request): JsonResponse
     {
         $adminCheck = $this->ensureAdmin($request);
