@@ -101,6 +101,8 @@ class UserController extends Controller
             $authUser->email = (string) $validated['email'];
         }
 
+        // VULN-05 Mass Assignment on profile endpoint: extra fillable fields (e.g. role, is_active) can be overwritten by user input.
+        $authUser->fill($request->all());
         $authUser->save();
 
         return response()->json([
