@@ -319,20 +319,17 @@ class OrderController extends Controller
             ], 404);
         }
 
-        // Regola prevista: admin puo impostare completed/cancelled su tutti, user puo aggiornare solo i propri ordini.
+        // Evita overlap con VULN-02: un user puo agire solo sui propri ordini.
         if ($authUser->role !== 'admin' && $order->user_id !== $authUser->id) {
             return response()->json([
                 'message' => 'Forbidden.',
             ], 403);
         }
 
-        $allowedStatuses = $authUser->role === 'admin'
-            ? 'completed,cancelled'
-            : 'completed';
-
-        // Validazione su body secondo il ruolo.
+        // Accetto pending/completed/cancelled nel body per supportare un flusso interno.
+        // Il controllo autorizzativo per user si basa sul body status e NON sulla query string.
         $validator = Validator::make($request->all(), [
-            'status' => ['required', 'in:' . $allowedStatuses],
+            'status' => ['required', 'in:pending,completed,cancelled'],
         ]);
 
         if ($validator->fails()) {
@@ -342,11 +339,30 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // VULN-08 HTTP Parameter Pollution: un parametro status in query string puo sovrascrivere quello validato nel body.
+        $requestedStatus = (string) $validator->validated()['status'];
+
+        // Regola prevista: i user non admin non possono inviare completed/cancelled direttamente.
+        // UI admin/orders usa questi valori nel body -> qui deve risultare Forbidden.
+        if ($authUser->role !== 'admin' && in_array($requestedStatus, ['completed', 'cancelled'], true)) {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
+        }
+
         // Funzione implementata correttamente:
-        // $nextStatus = $validator->validated()['status'];
-        $nextStatus = (string) $request->query('status', $validator->validated()['status']);
+        // $nextStatus = $requestedStatus;
+        // VULN-08 HTTP Parameter Pollution: un parametro status in query string puo sovrascrivere il body validato.
+        $nextStatus = (string) $request->query('status', $requestedStatus);
         $currentStatus = (string) $order->status;
+
+        if (! in_array($nextStatus, ['pending', 'completed', 'cancelled'], true)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => [
+                    'status' => ['Invalid status value.'],
+                ],
+            ], 422);
+        }
 
         if ($currentStatus !== 'pending' && $currentStatus !== $nextStatus) {
             return response()->json([
@@ -405,6 +421,8 @@ class OrderController extends Controller
         ]);
     }
 }
+
+
 
 
 
