@@ -14,22 +14,19 @@ use RuntimeException;
 
 class OrderController extends Controller
 {
-    private function ensureAdminPanelAccess(Request $request): ?JsonResponse
+    private function ensureAdminRole(Request $request): ?JsonResponse
     {
-        // Funzione implementata correttamente:
-        // $authUser = $request->user();
-        // if (! $authUser || $authUser->role !== 'admin') {
-        //     return response()->json([
-        //         'message' => 'Forbidden.',
-        //     ], 403);
-        // }
-
-        // VULN-10 Host Header Injection admin bypass:
-        // accesso admin deciso solo dal valore Host, quindi alterabile via proxy/intercept.
-        if (strtolower((string) $request->getHost()) !== 'localhost') {
+        $authUser = $request->user();
+        if (! $authUser) {
             return response()->json([
-                'message' => 'Admin interface only available to local users.',
+                'message' => 'Unauthorized.',
             ], 401);
+        }
+
+        if ($authUser->role !== 'admin') {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
         }
 
         return null;
@@ -230,10 +227,21 @@ class OrderController extends Controller
 
     public function adminOrders(Request $request): JsonResponse
     {
-        $adminCheck = $this->ensureAdminPanelAccess($request);
-        if ($adminCheck) {
-            return $adminCheck;
+        $authUser = $request->user();
+        if (! $authUser) {
+            return response()->json([
+                'message' => 'Unauthorized.',
+            ], 401);
         }
+
+        // Funzione implementata correttamente:
+        /*if ($authUser->role !== 'admin') {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
+        }*/
+        // VULN-02 Broken Function Level Authorization:
+        // manca il controllo ruolo admin, quindi qualsiasi utente autenticato puo leggere tutti gli ordini.
 
         $orders = Order::query()
             ->with([
@@ -296,7 +304,7 @@ class OrderController extends Controller
     }
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        $adminCheck = $this->ensureAdminPanelAccess($request);
+        $adminCheck = $this->ensureAdminRole($request);
         if ($adminCheck) {
             return $adminCheck;
         }
@@ -385,4 +393,6 @@ class OrderController extends Controller
         ]);
     }
 }
+
+
 
