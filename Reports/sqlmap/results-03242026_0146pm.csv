@@ -1,0 +1,2 @@
+Target URL,Place,Parameter,Technique(s),Note(s)
+http://127.0.0.1:8000/api/products?search=test,GET,search,BETU,

@@ -1,0 +1,36 @@
+- Nikto v2.6.0/
++ Target Host: 127.0.0.1
++ Target Port: 3000
++ GET /: Retrieved x-powered-by header: Next.js.
++ GET /: Uncommon header(s) 'x-nextjs-stale-time' found, with contents: 300.
++ GET /: Uncommon header(s) 'x-nextjs-prerender' found, with contents: 1,1.
++ GET /: Uncommon header(s) 'x-nextjs-cache' found, with contents: HIT.
++ GET /icons/: Uncommon header(s) 'refresh' found, with contents: 0;url=/icons.
++ OPTIONS /: Potential OPTIONSBLEED vulnerability detected. Allow header: ARRAY(0x556b1d702378). See: CVE-2017-9798: 
++ GET /: Suggested security header missing: x-content-type-options. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options: 
++ GET /: Suggested security header missing: content-security-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP: 
++ GET /: Suggested security header missing: permissions-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy: 
++ GET /: Suggested security header missing: strict-transport-security. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security: 
++ GET /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy: 
++ OPTIONS OPTIONS: Allowed HTTP Methods: ARRAY(0x556b1d701d48) .
+- Nikto v2.6.0/
++ Target Host: 127.0.0.1
++ Target Port: 3000
++ GET /: Retrieved x-powered-by header: Next.js.
++ GET /: Uncommon header(s) 'x-nextjs-prerender' found, with contents: 1,1.
++ GET /: Uncommon header(s) 'x-nextjs-stale-time' found, with contents: 300.
++ GET /: Uncommon header(s) 'x-nextjs-cache' found, with contents: HIT.
++ GET /icons/: Uncommon header(s) 'refresh' found, with contents: 0;url=/icons.
++ OPTIONS /: Potential OPTIONSBLEED vulnerability detected. Allow header: ARRAY(0x55e248de0670). See: CVE-2017-9798: 
++ GET /: Suggested security header missing: content-security-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP: 
++ GET /: Suggested security header missing: strict-transport-security. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security: 
++ GET /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy: 
++ GET /: Suggested security header missing: permissions-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy: 
++ GET /: Suggested security header missing: x-content-type-options. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options: 
++ OPTIONS OPTIONS: Allowed HTTP Methods: ARRAY(0x55e248de0a78) .
++ GET /node/view/666\"><script>alert(document.domain)</script>: Drupal 4.2.0 RC is vulnerable to Cross Site Scripting (XSS).
++ GET /index.php/\"><script><script>alert(document.cookie)</script><: eZ publish v3 and prior allow Cross Site Scripting (XSS).
++ GET /HMALLE8l3rnmYrKzzSEtPcAnebFJLRg6wntaJKe6XH6j4hAlxVAFq0TWKzPxSJABeDAqT4kaGthpADliQegOWxvLS2mCkOkBuYkgxJ3hvZPUWbve4FpIINFPjPY0ptt5kLexIAMOVFZSJxP49m50Et6jkJ97P2CoN3X67srZqzowtnll6m72okU5teXlKB31rwMT9FSQM0jSm5kI3XigY3Oi33j2ODg<font%20size=50><script>alert(11)</script><!--//--: MyWebServer 1.0.2 is vulnerable to Cross Site Scripting (XSS). See: CVE-2002-1453: 
++ GET http://100.100.100.200/latest/meta-data/: IP address found in the 'refresh' header. The IP is "100.100.100.200". See: https://portswigger.net/kb/issues/00600300_private-ip-addresses-disclosed: 
++ GET /: X-Frame-Options header is deprecated and was replaced with the Content-Security-Policy HTTP header with the frame-ancestors directive. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Frame-Options: 
++ GET /: The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/: 

@@ -1,0 +1,60 @@
+[1m[34m[*][0m Spooling to file /home/kali/bwa/reports/metasploit/06_sql_final.log...
+[4mmsf[0m [0m> setg RHOSTS 127.0.0.1
+[0mRHOSTS => 127.0.0.1
+[4mmsf[0m [0m> setg SSL false
+[0m[1m[33m[!][0m Changing the SSL option's value may require changing RPORT!
+SSL => false
+[4mmsf[0m [0m> 
+[0m[4mmsf[0m [0m> use auxiliary/scanner/http/blind_sql_query
+[0m[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set METHOD GET
+[0mMETHOD => GET
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set RPORT 8000
+[0mRPORT => 8000
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set PATH /api/products
+[0mPATH => /api/products
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set QUERY search=test
+[0mQUERY => search=test
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> run
+[0m[1m[34m[*][0m [Normal response body: 2  code: 200]
+[1m[34m[*][0m Scanned 1 of 1 hosts (100% complete)
+[1m[34m[*][0m Auxiliary module execution completed
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set RPORT 3000
+[0mRPORT => 3000
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set PATH /products
+[0mPATH => /products
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> set QUERY search=test
+[0mQUERY => search=test
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> run
+[0m[1m[34m[*][0m [Normal response body: 25890  code: 200]
+[1m[34m[*][0m Scanned 1 of 1 hosts (100% complete)
+[1m[34m[*][0m Auxiliary module execution completed
+[4mmsf[0m auxiliary([1m[31mscanner/http/blind_sql_query[0m) [0m> back
+[0m[4mmsf[0m [0m> 
+[0m[4mmsf[0m [0m> use auxiliary/scanner/http/error_sql_injection
+[0m[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set METHOD GET
+[0mMETHOD => GET
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set RPORT 8000
+[0mRPORT => 8000
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set PATH /api/products
+[0mPATH => /api/products
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set QUERY search=test
+[0mQUERY => search=test
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> run
+[0m[1m[32m[+][0m [127.0.0.1] SQL Injection found. (Single quote) (/api/products)
+[1m[32m[+][0m [127.0.0.1] Error string: 'Syntax error' Test Value: test'
+[1m[32m[+][0m [127.0.0.1] Vuln query parameter: search DB TYPE: unknown, Error type 'unknown'
+[1m[34m[*][0m Scanned 1 of 1 hosts (100% complete)
+[1m[34m[*][0m Auxiliary module execution completed
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set RPORT 3000
+[0mRPORT => 3000
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set PATH /products
+[0mPATH => /products
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> set QUERY search=test
+[0mQUERY => search=test
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> run
+[0m[1m[34m[*][0m Scanned 1 of 1 hosts (100% complete)
+[1m[34m[*][0m Auxiliary module execution completed
+[4mmsf[0m auxiliary([1m[31mscanner/http/error_sql_injection[0m) [0m> back
+[0m[4mmsf[0m [0m> 
+[0m[4mmsf[0m [0m> spool off
+[0m

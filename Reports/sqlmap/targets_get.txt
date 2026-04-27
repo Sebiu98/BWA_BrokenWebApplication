@@ -1,0 +1,5 @@
+http://127.0.0.1:8000/api/products?search=test
+http://127.0.0.1:8000/api/products?category=Action
+http://127.0.0.1:8000/api/products?search=test&category=Action
+http://127.0.0.1:3000/products?search=test
+http://127.0.0.1:3000/products?category=Action
