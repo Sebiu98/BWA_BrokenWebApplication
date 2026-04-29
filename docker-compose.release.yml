@@ -1,6 +1,6 @@
 services:
   webapp:
-    image: ${BWA_WEBAPP_IMAGE:-sebiu98/bwa-webapp:1.0.0}
+    image: ${BWA_WEBAPP_IMAGE:-sebiu98/bwa-webapp:latest}
     depends_on:
       database:
         condition: service_healthy
