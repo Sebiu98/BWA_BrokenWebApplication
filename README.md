@@ -5,17 +5,18 @@
 1. [Project Overview](#project-overview)
 2. [Security Notice](#security-notice)
 3. [Main Features](#main-features)
-4. [Setup](#setup)
+4. [Included Vulnerabilities](#included-vulnerabilities)
+5. [Setup](#setup)
    - [General Requirements](#general-requirements)
    - [Important Note About Admin Features](#important-note-about-admin-features)
-5. [Local Deployment](#local-deployment)
+6. [Local Deployment](#local-deployment)
    - [Download the Project](#download-the-project)
    - [PostgreSQL Setup](#postgresql-setup)
    - [Backend Setup](#backend-setup)
    - [Frontend Setup](#frontend-setup)
-6. [Docker Deployment](#docker-deployment)
-7. [Default Accounts](#default-accounts)
-8. [Useful Commands](#useful-commands)
+7. [Docker Deployment](#docker-deployment)
+8. [Default Accounts](#default-accounts)
+9. [Useful Commands](#useful-commands)
 
 ## Project Overview
 
@@ -61,6 +62,130 @@ BWA Dojo includes the main features of a small game-key e-commerce application:
 - admin area for managing orders
 
 These features are implemented so that the application behaves like a complete web app, while still keeping the vulnerable parts inside realistic user and admin workflows.
+
+## Included Vulnerabilities
+
+BWA Dojo currently includes ten intentionally implemented vulnerabilities.
+
+They are integrated into the normal application flows instead of being placed on separate challenge pages. This means that the vulnerabilities appear in areas such as authentication, user profiles, product search, comments, orders, and administrative functionality.
+
+| ID | Vulnerability | Main Area | Reference |
+| --- | --- | --- | --- |
+| VULN-01 | Insecure Direct Object Reference (IDOR) | Order details | CWE-639 |
+| VULN-02 | Broken Function Level Authorization (BFLA) | Administrative orders | CWE-862 |
+| VULN-03 | User Enumeration | Login | CWE-204 |
+| VULN-04 | Login Brute Force | Login | CWE-307 |
+| VULN-05 | Mass Assignment / Privilege Escalation | User profile | CWE-915 |
+| VULN-06 | Stored Cross-Site Scripting (XSS) | Product comments | CWE-79 |
+| VULN-07 | SQL Injection | Product search | CWE-89 |
+| VULN-08 | HTTP Parameter Pollution (HPP) | Order status update | CWE-235 |
+| VULN-09 | Security Misconfiguration | API configuration and error handling | CWE-209 |
+| VULN-10 | Host Header Injection | Administrative access | CWE-807 |
+
+### VULN-01 — Insecure Direct Object Reference (IDOR)
+
+The order detail endpoint requires authentication but does not correctly verify that the requested order belongs to the authenticated user.
+
+An authenticated user who knows another order identifier can therefore access order information belonging to another account.
+
+Affected flow:
+
+`POST /api/orders/show`
+
+### VULN-02 — Broken Function Level Authorization (BFLA)
+
+The administrative order listing requires authentication, but the backend intentionally does not enforce the administrator role.
+
+As a result, a normal authenticated user can access information that should only be available to administrators.
+
+Affected endpoint:
+
+`GET /api/orders/admin`
+
+### VULN-03 — User Enumeration
+
+The login endpoint returns different responses depending on whether an email address exists.
+
+A request for an unknown email returns a different status and message from a request using an existing email with an incorrect password. This makes it possible to determine whether an account exists.
+
+Affected endpoint:
+
+`POST /api/auth/login`
+
+### VULN-04 — Login Brute Force
+
+The login endpoint intentionally has no effective rate limiting or temporary account lockout.
+
+Repeated authentication attempts can therefore be sent without being blocked or significantly delayed.
+
+Affected endpoint:
+
+`POST /api/auth/login`
+
+### VULN-05 — Mass Assignment / Privilege Escalation
+
+The profile update logic accepts additional user-controlled fields that should not normally be editable by a standard user.
+
+Because sensitive model attributes are assignable, a crafted profile update can modify privileged properties such as the user's role.
+
+Affected endpoint:
+
+`PUT /api/profile`
+
+### VULN-06 — Stored Cross-Site Scripting (XSS)
+
+Product comments are stored by the backend and later rendered as HTML by the frontend without sanitising the submitted content.
+
+A malicious payload stored inside a comment can therefore execute when the product page is viewed.
+
+Affected area:
+
+Product comments and reviews.
+
+### VULN-07 — SQL Injection
+
+The product search functionality builds part of the database query using user-controlled search input without parameterisation.
+
+This allows the search parameter to modify the SQL query logic.
+
+Affected endpoint:
+
+`GET /api/products?search=...`
+
+### VULN-08 — HTTP Parameter Pollution (HPP)
+
+The order status update flow validates a status value from the request body, but the value later used by the application can be overridden by a query-string parameter.
+
+This creates a difference between the value that is validated and the value that is actually applied.
+
+Affected endpoint:
+
+`PATCH /api/orders/{id}/status`
+
+### VULN-09 — Security Misconfiguration
+
+The API intentionally contains configuration weaknesses.
+
+These include permissive CORS settings and detailed error responses that may expose internal information such as exception details, file paths, line numbers, and database errors.
+
+Affected areas include:
+
+- API CORS configuration
+- API exception handling
+
+### VULN-10 — Host Header Injection
+
+Some administrative functions intentionally use the HTTP `Host` value as part of their authorization decision instead of relying only on the authenticated user's role.
+
+Because the Host header is controlled by the client, modifying it can allow a normal authenticated user to reach administrative functionality.
+
+Affected areas include:
+
+- user management
+- product management
+- comment moderation
+
+These vulnerabilities are intentionally included for testing and educational purposes. They should only be exploited inside the BWA Dojo environment or another system where you have explicit authorization.
 
 ## Setup
 
