@@ -1,6 +1,5 @@
 # BWA Dojo
-
-BWA Dojo is listed in the OWASP Vulnerable Web Applications Directory (VWAD) (https://vwad.owasp.org/app/bwa-dojo/).
+BWA Dojo is listed in the [OWASP Vulnerable Web Applications Directory (VWAD)](https://vwad.owasp.org/app/bwa-dojo/).
 
 ## Table of Contents
 
@@ -188,6 +187,8 @@ Affected areas include:
 - comment moderation
 
 These vulnerabilities are intentionally included for testing and educational purposes. They should only be exploited inside the BWA Dojo environment or another system where you have explicit authorization.
+
+For detailed technical information, including exploitation methodology and expected results, see [docs/VULNERABILITIES.md](docs/VULNERABILITIES.md).
 
 ## Setup
 
@@ -623,3 +624,6 @@ Build the frontend:
 ```powershell
 pnpm run build
 ```
+
+
+For contribution guidelines, security reporting, and licensing information, see [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [LICENSE](LICENSE).
