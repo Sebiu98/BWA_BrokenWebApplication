@@ -1,5 +1,7 @@
 # BWA Dojo
 
+BWA Dojo is listed in the OWASP Vulnerable Web Applications Directory (VWAD) (https://vwad.owasp.org/app/bwa-dojo/).
+
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
